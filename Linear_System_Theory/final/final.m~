@@ -1,0 +1,60 @@
+close all
+clear all
+clc
+
+%% Question 1
+%Part a)
+syms p th pdot thdot
+x = [p;th;pdot;thdot];
+load pendulum.mat %stores A and B matrices as A and B
+n = size(A,2);
+B_tau = B(:,2);
+CO = ctrb(A,B_tau);
+rank(CO)
+lambda = eig(A)
+for i = 1:n
+    if real(lambda(i)) >= 0
+        lambda(i)
+        rank([A-lambda(i)*eye(n), B_tau])
+    end
+end
+u1 = orth(CO);
+u2 = null(CO.');
+T = [u1, u2];
+Abar = inv(T)*A*T;
+Bbar = inv(T)*B_tau;
+xbar = simplify(inv(T)*x);
+Au = Abar(4,4);
+xu = vpa(xbar(4),2)
+%-------------------------------------------------------------------------%
+%Part b)
+clc
+C_p = [1 0 0 0]; %I can measure p, but not theta
+O = obsv(A,C_p); %compute observability matrix
+rank(O)
+C_th = [0 1 0 0]; %I can measure theta, but not p
+O = obsv(A,C_th); %compute observability matrix
+rank(O)
+lambda = eig(A);
+for i = 1:n
+    lam = lambda(i)
+    ran_th = rank([A-lambda(i)*eye(n); C_th])
+    ran_p = rank([A-lambda(i)*eye(n); C_p])
+end
+%-------------------------------------------------------------------------%
+%Part c)
+clc
+C = [0 0 1 0; 0 1 0 0];
+D = [0;0];
+O = obsv(A,C);
+rank(O)
+syms s
+G_hat = simplify(C*inv(s*eye(4) - A)*B);
+simplify(det(G_hat))
+%-------------------------------------------------------------------------%
+%Part d)
+%% Question 2
+%Part a)
+B_F = B(:,1);
+P = [-1;-2;complex(-1,1);complex(-1,-1)];
+K = place(A,B_F, P); %u = -K*x
