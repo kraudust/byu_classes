@@ -1,6 +1,7 @@
 import numpy as np
 import pandas
 import matplotlib.pyplot as plt
+import copy
 
 class perceptron():
     def __init__(self,features,labels,learning_rates,num_iter, data_name):
@@ -25,26 +26,32 @@ class perceptron():
         num_feat_plus_1 = np.shape(self.x)[0]
         #initialize weights, the +1 is because I'm including the bias in the weights
         self.w0 = np.random.rand(num_feat_plus_1, num_outputs) #size of w is #features x 1
+        # self.z = np.zeros((np.shape(self.x)[1],1))
+        self.z = np.zeros((np.shape(self.x)[1],1))
+        self.z0 = np.sign(np.dot(self.w0.T,self.x)).T #perceptron classification output for all samples
+        self.z0 = np.where(self.z0 < 0, 0, self.z0) #change -1 to 0
+
     def calc_classification_accuracy(self):
-        z = np.sign(np.dot(self.w.T,self.x)).T #perceptron classification output for all samples
-        z = np.where(z < 0, 0, z) #change -1 to 0
-        diff = self.t - z
+        diff = self.t - self.z
         num_right = float(sum(num == 0 for num in diff))
         return (num_right/float(np.size(diff)))*100.0
 
     def run_perceptron(self):
         self.w = self.w0
+        self.z = copy.copy(self.z0)
         self.accuracy_array = np.zeros(self.num_iterations)
         self.weight_norm_array = np.zeros(self.num_iterations)
+        #print self.z
         for i in range(self.num_iterations):
             self.accuracy_array[i] = self.calc_classification_accuracy()
             self.weight_norm_array[i] = np.log(np.sqrt(np.dot(self.w.T,self.w)))
             for j in range(np.shape(self.x)[1]):
-                zi = np.sign(np.dot(self.w.T,self.x[:,j])) #perceptron classification output for sample i
-                zi = np.where(zi < 0, 0, zi) #change -1 to 0
+                self.z[j] = np.sign(np.dot(self.w.T,self.x[:,j])) #perceptron classification output for sample j
+                self.z[j] = np.where(self.z[j] < 0, 0, self.z[j]) #change -1 to 0
                 # update weights
-                del_w = np.atleast_2d(self.c*np.dot((self.t[j,0]-zi[0]).T,self.x[:,j].T))
+                del_w = np.atleast_2d(self.c*np.dot((self.t[j,0]-self.z[j,0]).T,self.x[:,j].T))
                 self.w = self.w + del_w.T
+        raw_input()
         #return self.w, self.accuracy_array, self.weight_norm_array
 
     def gen_plots(self):
@@ -84,8 +91,8 @@ if __name__ == '__main__':
     num_iterations = 100
     learning_rates = np.array([0.01, 0.1, 1.0]) #learning rate
 
-    irisperceptron = perceptron(x,labels,learning_rates,num_iterations,'Iris Data Set')
-    irisperceptron.gen_plots()
+    #irisperceptron = perceptron(x,labels,learning_rates,num_iterations,'Iris Data Set')
+    #irisperceptron.gen_plots()
 
     #------------------------------------------------------
     #Load CIFAR-10 Data Set--------------------------------
