@@ -53,14 +53,27 @@ mu = zeros(2,length(t)); %vector for state estimates
 mu(:,1) = mu_0;
 sigma = zeros(2,2,length(t)); %vector for covariance
 sigma(:,:,1) = sigma_0;
-
+K_t = zeros(2,length(t));
+sigma_bart = zeros(2,2,length(t)-1);
+sigma_predict_update = zeros(2,2,2*length(t)-1);
 for i = 2:length(t)
     % Get sensor measurement
     z_t = C*xt(:,i) + Q.^(0.5)*randn(1);
-    [mu(:,i), sigma(:,:,i), K_t(:,i-1), sigma_bart] = kalman_filter_func(mu(:,i-1), sigma(:,:,i-1), u(i-1), z_t, A, B, C, R, Q);
+    [mu(:,i), sigma(:,:,i), K_t(:,i-1), sigma_bart(:,:,i-1)] = kalman_filter_func(mu(:,i-1), sigma(:,:,i-1), u(i-1), z_t, A, B, C, R, Q);
 end
 K_t(:,length(t)) = K_t(:,length(t)-1);
 
+%So I can visualize the covariance after both prediction and measurement update steps
+i = 1;
+for j = 1:length(t)
+    sigma_predict_update(:,:,i) =  sigma(:,:,j);
+    if j < length(t)
+        sigma_predict_update(:,:,i+1) = sigma_bart(:,:,j);
+    end
+    i = i + 2;
+end
+
+%Make Plots
 figure()
 plot(t,xt(1,:))
 hold on
@@ -97,12 +110,12 @@ title('Estimation Error')
 legend('Position Error (m)', 'Velocity Error (m/s)')
 
 figure()
-plot(t, reshape(sigma(1,1,:),length(t),1))
+plot(reshape(sigma_predict_update(1,1,:),length(sigma_predict_update),1))
 hold on
-plot(t,reshape(sigma(2,2,:),length(t),1))
-xlabel('Time (sec)')
+plot(reshape(sigma_predict_update(2,2,:),length(sigma_predict_update),1))
+xlabel('Time Step')
 ylabel('Error Covariance')
-title('Error Covariance vs. Time')
+title('Error Covariance vs. Time Step')
 legend('Position Covariance', 'Velocity Covariance')
 
 figure()
