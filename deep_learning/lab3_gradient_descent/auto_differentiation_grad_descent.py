@@ -30,17 +30,17 @@ class grad_desc_loss():
         self.scores = np.dot(W,self.x)
         b = np.max(self.scores,0) # used for the exp-normalize trick (see timvieira.github.io/blog/post/2014/02/11/exp-normalize-trick/)
         Lmat = -np.log(np.divide(np.exp(np.subtract(self.scores,b)),np.sum(np.exp(np.subtract(self.scores,b)),0))) #loss matrix
-        self.loss = np.sum(np.sum(self.lab_onehot*Lmat,0))
+        self.loss = np.sum(np.sum(self.lab_onehot*Lmat,0))/self.num_samples
         return self.loss
 
     def minimize_loss(self):
-        step_size = 0.0001
+        step_size = 0.1
         for i in range(self.num_epochs):
             self.loss_array[i] = self.calc_loss_softmax(self.W)
             self.accuracy_array[i] = self.calc_accuracy()
             self.grad = grad(self.calc_loss_softmax)
             self.W = self.W - step_size*self.grad(self.W)
-            #print self.loss
+            print i, self.loss
         self.make_plots()
 
     def calc_accuracy(self):
@@ -76,9 +76,12 @@ if __name__ == '__main__':
     labels = data['labels']
     labels = np.atleast_2d( labels ).T #size is number of samples x 1
     N = 1000
+    # D = 10
     # only keep N samples
     features = features[0:N,:]
     labels = labels[0:N,:]
+    # #project down into a D-dimensional space
+    # features = np.dot(features,np.random.randn(3072,D))
 
     #whiten our data - zero mean and unit standard deviation
     features = (features - np.mean(features,axis=0))/np.std(features,axis=0)

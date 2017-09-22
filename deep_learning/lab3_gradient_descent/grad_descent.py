@@ -29,7 +29,7 @@ class grad_desc_loss():
         self.scores = np.dot(self.W,self.x)
         b = np.max(self.scores,0) # used for the exp-normalize trick (see timvieira.github.io/blog/post/2014/02/11/exp-normalize-trick/)
         Lmat = -np.log(np.divide(np.exp(np.subtract(self.scores,b)),np.sum(np.exp(np.subtract(self.scores,b)),0))) #loss matrix
-        self.loss = np.sum(np.sum(self.lab_onehot*Lmat,0))
+        self.loss = np.sum(np.sum(self.lab_onehot*Lmat,0))/self.num_samples
         return self.loss
 
     def numerical_gradient(self):
@@ -43,7 +43,7 @@ class grad_desc_loss():
                 self.grad[i,j] = (loss_eps - loss)/eps
 
     def minimize_loss(self):
-        step_size = 0.0001
+        step_size = 0.1
         for i in range(self.num_epochs):
             self.loss_array[i] = self.calc_loss_softmax()
             self.accuracy_array[i] = self.calc_accuracy()
