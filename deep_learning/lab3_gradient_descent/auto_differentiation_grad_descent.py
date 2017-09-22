@@ -34,7 +34,7 @@ class grad_desc_loss():
         return self.loss
 
     def minimize_loss(self):
-        step_size = 0.00001
+        step_size = 0.0001
         for i in range(self.num_epochs):
             self.loss_array[i] = self.calc_loss_softmax(self.W)
             self.accuracy_array[i] = self.calc_accuracy()
@@ -75,10 +75,10 @@ if __name__ == '__main__':
     features = data['data'] #size is #samples(10000) x #features(3072)
     labels = data['labels']
     labels = np.atleast_2d( labels ).T #size is number of samples x 1
-    # N = 1000
-    # # only keep N samples
-    # features = features[0:N,:]
-    # labels = labels[0:N,:]
+    N = 1000
+    # only keep N samples
+    features = features[0:N,:]
+    labels = labels[0:N,:]
 
     #whiten our data - zero mean and unit standard deviation
     features = (features - np.mean(features,axis=0))/np.std(features,axis=0)
