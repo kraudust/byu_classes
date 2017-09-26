@@ -17,7 +17,7 @@ alpha = [alpha1; alpha2; alpha3; alpha4];
 %Landmark locations
 xland = [6, -7, 6];
 yland = [4, 8, -4];
-
+m = [xland', yland'];
 %Standard deviations of range and bearing sensor noise in meters & radians
 sigma_range = 0.1;
 sigma_phi = 0.05;
@@ -39,5 +39,8 @@ for i = 1:length(t)-1
     xt(:,i+1) = velocity_motion_model(u(:,i), xt(:,i), alpha, Ts);
 end
 
+%Simulate range and bearing measurements
+[r, phi] = sim_measurements(m,sigma_range,sigma_phi,xt);
+
 %Draw Robot
-draw_robot([t;xt]);
+draw_robot([t;xt],m,r,phi);
