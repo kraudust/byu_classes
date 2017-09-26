@@ -27,7 +27,7 @@ function draw_robot(u,m,r,phi)
         else 
             update_plot(x(i),y(i),theta(i),P,vehicle_handle, vehicle_path_handle,landmark_handle,measurement_handle, x,y, i,m,r,phi);
         end
-        pause(0.01)
+        pause(0.05)
     end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

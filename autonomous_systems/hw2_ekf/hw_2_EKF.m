@@ -41,6 +41,16 @@ end
 
 %Simulate range and bearing measurements
 [r, phi] = sim_measurements(m,sigma_range,sigma_phi,xt);
+z = [r;phi];
+
+%Run EKF to get state estimates
+mu = zeros(3,length(t));
+sigma = zeros(3,3,length(t));
+sigma(:,:,1) = eye(3);
+mu(:,1) = [x0;y0;th0];
+for i = 1:length(t)-1
+    [mu(:,i+1), sigma(:,:,i+1)] = extended_kalman_filter(mu(:,i), sigma(:,:,i), u(:,i), z(:,i+1), m, sigma_range, sigma_phi,Ts,alpha);
+end
 
 %Draw Robot
 draw_robot([t;xt],m,r,phi);
