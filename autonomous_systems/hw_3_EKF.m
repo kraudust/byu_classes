@@ -40,15 +40,4 @@ for i = 1:length(t)-1
 end
 
 %Draw Robot
-%test plotting function
-u1 = [0;0;0;0];
-u2 = [0;0;0;pi/2];
-u3 = [0;0;0;pi];
-u4 = [0;0;0;-3*pi/2];
-u5 = [0;0;0;2*pi];
-utest = [u1, u2, u3, u4, u5];
-
-for i = 1:length(utest)
-    %draw_robot([t(i);xt(:,i)]);
-    draw_robot(utest(:,i));
-end
+draw_robot([t;xt]);
