@@ -1,4 +1,4 @@
-function [mu_t, sigma_t] = extended_kalman_filter(mu_tmin1, sigma_tmin1, u_tmin1, z_t, m, sigma_r, sigma_phi,Ts,alpha)
+function [mu_t, sigma_t,K] = extended_kalman_filter(mu_tmin1, sigma_tmin1, u_tmin1, z_t, m, sigma_r, sigma_phi,Ts,alpha)
     th = mu_tmin1(3);
     vt = u_tmin1(1);
     omegat = u_tmin1(2);
@@ -35,5 +35,6 @@ function [mu_t, sigma_t] = extended_kalman_filter(mu_tmin1, sigma_tmin1, u_tmin1
     end
     mu_t = mu_tbar;
     sigma_t = sigma_tbar; 
+    K = K_ti;
 end
 

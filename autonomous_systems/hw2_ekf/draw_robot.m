@@ -1,9 +1,8 @@
-function draw_robot(u,m,r,phi)
+function draw_robot(t,xt,m,r,phi,mu)
     % process inputs to function
-    t = u(1,:);
-    x = u(2,:);
-    y = u(3,:);
-    theta = u(4,:);
+    x = xt(1,:);
+    y = xt(2,:);
+    theta = xt(3,:);
     
     % Parameters
     P = defineCircle;
@@ -13,6 +12,7 @@ function draw_robot(u,m,r,phi)
     persistent vehicle_path_handle
     persistent landmark_handle
     persistent measurement_handle
+    persistent est_path_handle
     
     %create an axis
     axis([-10 10 -10 10])
@@ -22,16 +22,16 @@ function draw_robot(u,m,r,phi)
         if t(i)==0
             xlabel('X')
             ylabel('Y')
-            [vehicle_handle, vehicle_path_handle, landmark_handle,measurement_handle] = update_plot(x(i),y(i),theta(i),P,[],[],[],[], x,y, i,m,r,phi);
+            [vehicle_handle, vehicle_path_handle, landmark_handle,measurement_handle,est_path_handle] = update_plot(x(i),y(i),theta(i),P,[],[],[],[],[], x,y, i,m,r,phi,mu);
         % at every other time step, redraw 
         else 
-            update_plot(x(i),y(i),theta(i),P,vehicle_handle, vehicle_path_handle,landmark_handle,measurement_handle, x,y, i,m,r,phi);
+            update_plot(x(i),y(i),theta(i),P,vehicle_handle, vehicle_path_handle,landmark_handle,measurement_handle,est_path_handle, x,y, i,m,r,phi,mu);
         end
-        pause(0.05)
+        %pause(0.02)
     end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [v_handle,p_handle,l_handle,m_handle] = update_plot(xi,yi,theta,P,v_handle,p_handle,l_handle,m_handle,x,y,i,m,r,phi)
+function [v_handle,p_handle,l_handle,m_handle,est_handle] = update_plot(xi,yi,theta,P,v_handle,p_handle,l_handle,m_handle,est_handle,x,y,i,m,r,phi,mu)
     R = [cos(theta) -sin(theta);...
         sin(theta) cos(theta)];
     pts = R * P.pts;
@@ -44,12 +44,12 @@ function [v_handle,p_handle,l_handle,m_handle] = update_plot(xi,yi,theta,P,v_han
     p_handle = plot(xi,yi);
     l_handle = scatter(m(:,1),m(:,2),80,'filled','k');
     m_handle = scatter(xi + r(:,i).*cos(theta + phi(:,i)),yi + r(:,i).*sin(theta + phi(:,i)),'bx');
+    est_handle = plot(xi,yi,'r');
   else
     set(v_handle,'XData',pts(1,:),'YData',pts(2,:));
     set(p_handle,'XData',x(1:i), 'YData',y(1:i));
-    xi + r(:,i).*cos(theta + phi(:,i))
-    yi + r(:,i).*sin(theta + phi(:,i))
     set(m_handle,'XData',(xi + r(:,i).*cos(theta + phi(:,i)))','YData',(yi + r(:,i).*sin(theta + phi(:,i)))');
+    set(est_handle,'XData',mu(1,1:i),'yData',mu(2,1:i));
     drawnow
   end
 end
