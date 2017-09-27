@@ -16,25 +16,26 @@ function [mu_t, sigma_t,K] = extended_kalman_filter(mu_tmin1, sigma_tmin1, u_tmi
         [-(vt/omegat)*sin(th) + (vt/omegat)*sin(th + omegat*Ts);...
         (vt/omegat)*cos(th) - (vt/omegat)*cos(th + omegat*Ts);...
         omegat*Ts];
-    sigma_tbar = Gt*sigma_tmin1*Gt' + Vt*Mt*Vt';
+    sigma_tbar = Gt*sigma_tmin1*Gt.' + Vt*Mt*Vt.';
     Qt = [sigma_r^2     0;...
         0               sigma_phi^2];
+    K = zeros(3,2,size(m,1));
     for i = 1:size(z_t,1)/2
-        z_ti = [z_t(i);z_t(i+3)]; %z_t is [R1;R2;R3;phi1;phi2;phi3]
+        z_ti = [z_t(i);z_t(i+size(z_t,1)/2)]; %z_t is [R1;R2;R3;phi1;phi2;phi3]
         q = (m(i,1) - mu_tbar(1))^2 + (m(i,2)-mu_tbar(2))^2;
         z_thati = [...
             sqrt(q);...
             atan2(m(i,2) - mu_tbar(2), m(i,1) - mu_tbar(1)) - mu_tbar(3)];
         H_ti = [...
-            -((m(i,1) - mu_tbar(1))/sqrt(q))    -((m(i,2) - mu_tbar(2))/sqrt(q))    0;...
-            (m(i,2) - mu_tbar(2))/q             -((m(i,1) - mu_tbar(1))/q)          -1];
-        S_ti = H_ti*sigma_tbar*H_ti' + Qt;
-        K_ti = sigma_tbar*H_ti'/inv(S_ti);
+            -(m(i,1) - mu_tbar(1))/sqrt(q)    -(m(i,2) - mu_tbar(2))/sqrt(q)    0;...
+            (m(i,2) - mu_tbar(2))/q             -(m(i,1) - mu_tbar(1))/q          -1];
+        S_ti = H_ti*sigma_tbar*H_ti.' + Qt;
+        K_ti = sigma_tbar*H_ti.'/(S_ti);
         mu_tbar = mu_tbar + K_ti*(z_ti - z_thati);
-        sigma_tbar = (eye(3) - K_ti*H_ti)*sigma_tbar;    
+        sigma_tbar = (eye(3) - K_ti*H_ti)*sigma_tbar; 
+        K(:,:,i) = K_ti;
     end
     mu_t = mu_tbar;
     sigma_t = sigma_tbar; 
-    K = K_ti;
 end
 
