@@ -22,10 +22,10 @@ alpha4 = 0.1;
 alpha = [alpha1; alpha2; alpha3; alpha4];
 
 %Landmark locations
-xland = [6, -7, 6];
-yland = [4, 8, -4];
-m = [xland', yland'];
-%m = 10-20*rand(1000,2);
+% xland = [6, -7, 6];
+% yland = [4, 8, -4];
+% m = [xland', yland'];
+m = 10-20*rand(1000,2);
 
 
 %Standard deviations of range and bearing sensor noise in meters & radians
@@ -140,17 +140,17 @@ xlabel('Time (sec)')
 ylabel('Theta Angle Error (Rad)')
 suptitle('Estimation Error')
 
-%-------------------------------------
-%Kalman Gains
-figure()
-subplot(3,1,1)
-plot(t, K1norm)
-ylabel('Landmark 1')
-subplot(3,1,2)
-plot(t,K2norm)
-ylabel('Landmark 2')
-subplot(3,1,3)
-plot(t,K3norm)
-ylabel('Landmark 3')
-xlabel('Time (sec)')
-suptitle('Frobenius Norms of Kalman Gains')
+% %-------------------------------------
+% %Kalman Gains
+% figure()
+% subplot(3,1,1)
+% plot(t, K1norm)
+% ylabel('Landmark 1')
+% subplot(3,1,2)
+% plot(t,K2norm)
+% ylabel('Landmark 2')
+% subplot(3,1,3)
+% plot(t,K3norm)
+% ylabel('Landmark 3')
+% xlabel('Time (sec)')
+% suptitle('Frobenius Norms of Kalman Gains')
