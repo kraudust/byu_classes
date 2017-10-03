@@ -24,7 +24,7 @@ function [mu_t, sigma_t, Kt] = unscented_kalman_filter(mu_tm1, sigma_tm1, u_tm1,
     
     %Generate sigma points (2L + 1)
     R = chol(sigma_a_tm1); % matrix square root
-    alpha = 1; %scaling parameter to determine how spread out sigma points are
+    alpha = .1; %scaling parameter to determine how spread out sigma points are
     kappa = 3; %scaling parameter to determine how spread out sigma points are
     lamda = alpha^2 * (n + kappa) - n;
     gamma = sqrt(n+lamda);
