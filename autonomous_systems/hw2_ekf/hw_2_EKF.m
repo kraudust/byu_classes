@@ -25,7 +25,7 @@ alpha = [alpha1; alpha2; alpha3; alpha4];
 % xland = [6, -7, 6];
 % yland = [4, 8, -4];
 % m = [xland', yland'];
-m = 10-20*rand(1000,2);
+m = 10-20*rand(10000,2);
 
 
 %Standard deviations of range and bearing sensor noise in meters & radians
