@@ -130,6 +130,7 @@ writer = tf.summary.FileWriter("./tf_logs",sess.graph)
 tf.summary.scalar('loss', loss)
 merged = tf.summary.merge_all()
 accuracy_array = np.array([])
+i_array = np.array([])
 for i in xrange(len(labels_train)):
 # for i in range(5000):
     # im = reshape_cifar_image(features_train[i,:])
@@ -153,12 +154,13 @@ for i in xrange(len(labels_train)):
         print 'i: ', i, 'out of ', len(labels_train)
         print '\n'
         accuracy_array = np.append(accuracy_array,accuracy)
+        i_array = np.append(i_array, i)
 writer.close()
 
 plt.figure()
-plt.plot(accuracy_array)
-plt.xlabel('Epochs')
+plt.plot(i_array, accuracy_array)
+plt.xlabel('Training Step')
 plt.ylabel('Classification Accuracy %')
-plt.title('Accuracy')
+plt.title('Training Set Accuracy')
 plt.show()
 
