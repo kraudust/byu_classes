@@ -6,7 +6,7 @@ function [q] = measurement_prob(z_t, xt_m, lm, sigma_r, sigma_phi)
     for i = 1:size(lm,1)
         rhat = ((lm(i,1) - xt_m(1,:)).^2 + (lm(i,2) - xt_m(2,:)).^2).^0.5;
         phihat = atan2(lm(i,2) - xt_m(2,:), lm(i,1) - xt_m(1,:));
-        q = q + pdf('Normal',z_t(i) - rhat, 0, sigma_r).*pdf('Normal',z_t(i+size(lm,1)) - phihat, 0, sigma_phi);
+        q = q+pdf('Normal',z_t(i) - rhat, 0, sigma_r).*pdf('Normal',z_t(i+size(lm,1)) - phihat, 0, sigma_phi);
     end
 end
 
