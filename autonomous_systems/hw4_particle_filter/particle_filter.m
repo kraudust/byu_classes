@@ -1,5 +1,10 @@
-function [chi_t] = particle_filter(chi_tm1, u_tm1, z_t, lm)
+function [chi_t] = particle_filter(chi_tm1, u_tm1, z_t, lm, Ts, alpha, sigma_r, sigma_phi)
     %Table 8.2 Algorithm in Probabilistic Robotics
+    xt_m = velocity_motion_model(u_tm1, chi_tm1, alpha, Ts);
+    wt_m = measurement_probability(z_t, xt_m, lm, sigma_r, sigma_phi);
+    chibar_t = xt_m.*wt_m;
+    
+    chi_t = low_variance_sampler(chibar_t, wt_m);
     
 end
 

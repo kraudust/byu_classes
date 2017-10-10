@@ -29,6 +29,7 @@ function draw_robot(t,xt,m,r,phi,mu, particles)
         else 
             update_plot(x(i),y(i),theta(i),P,vehicle_handle, vehicle_path_handle,landmark_handle,measurement_handle,est_path_handle, particles_handle, x,y, i,m,r,phi,mu, particles_i);
         end
+        waitforbuttonpress
         %pause(0.02)
     end
 end

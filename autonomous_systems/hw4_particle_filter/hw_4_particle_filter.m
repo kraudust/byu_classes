@@ -68,7 +68,10 @@ rand_y = -10 + 20.*rand(1,M);
 rand_th = -10 + 20.*rand(1,M);
 chi0 = [rand_x; rand_y; rand_th];
 particles = zeros(length(t), 3, M);
-
+particles(1,:,:) = chi0;
+for i = 1:length(t)-1
+   particles(i+1, :, :) = particle_filter(reshape(particles(i,:,:),3,M), u(:,i), z(:,i+1), lm, Ts, alpha, sigma_range, sigma_phi);
+end
 
 %-------------------------------Run UKF------------------------------------
 mu = zeros(size(xt));

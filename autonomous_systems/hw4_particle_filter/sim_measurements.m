@@ -1,5 +1,5 @@
 function [r, phi] = sim_measurements(m,sigma_r, sigma_phi,xt)
-    % Table 6.4 Algorithm in Probabilistic Robotics
+    % Eq. 6.40 Algorithm in Probabilistic Robotics
     %size of m is #landmarks by 2 (x & y location of each landmark)
     r = zeros(size(m,1),size(xt,2));
     phi = zeros(size(m,1),size(xt,2));
