@@ -1,5 +1,6 @@
 function [chibar_t] = low_variance_sampler(chi_t, w_t)
     % Table 4.4 Algorithm in Probabilistic Robotics
+    w_t = w_t/sum(w_t);
     M = size(w_t, 2);
     r = (1/M)*rand();
     c = w_t(1);
