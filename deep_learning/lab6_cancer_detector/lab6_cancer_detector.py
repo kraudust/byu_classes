@@ -110,7 +110,7 @@ for i in xrange(len(neg_test_filenames)):
 # whiten data
 train_ims = (train_ims - np.mean(train_ims,0))/(np.std(train_ims,0))
 test_ims = (test_ims - np.mean(test_ims,0))/(np.std(test_ims,0))
-------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------
 
 
 
