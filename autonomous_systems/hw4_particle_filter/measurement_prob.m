@@ -8,6 +8,7 @@ function [q] = measurement_prob(z_t, xt_m, lm, sigma_r, sigma_phi)
         phihat = atan2(lm(i,2) - xt_m(2,:), lm(i,1) - xt_m(1,:)) - xt_m(3,:);
         q_lm(i,:) = pdf('Normal',z_t(i) - rhat, 0, sigma_r).*pdf('Normal',z_t(i+size(lm,1)) - phihat, 0, sigma_phi);
     end
-    q = mean(q_lm,1);
+    %q = mean(q_lm,1);
+    q = q_lm(1,:).*q_lm(2,:).*q_lm(3,:);
 end
 
