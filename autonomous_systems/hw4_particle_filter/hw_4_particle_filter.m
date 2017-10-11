@@ -47,7 +47,7 @@ yland = [4, 8, -4];
 % xland = [-7];
 % yland = [8];
 lm = [xland', yland'];
-%m = 10-20*rand(10000,2);
+% lm = 10-20*rand(5,2);
 
 %Standard deviations of range and bearing sensor noise in meters & radians
 sigma_range = 0.1;

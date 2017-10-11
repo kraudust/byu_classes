@@ -7,8 +7,8 @@ function [chi_t, mu_t, sigma_t] = particle_filter(chi_tm1, u_tm1, z_t, lm, Ts, a
         0                   0               (std(xt_m(3,:),0,2))^2];
         
     wt_m = measurement_prob(z_t, xt_m, lm, sigma_r, sigma_phi);
+    max(wt_m)
     wt_m = wt_m/sum(wt_m);
-    
     chi_t = low_variance_sampler(xt_m, wt_m);
     
     % Calculate number of unique particles after resampling
