@@ -67,7 +67,7 @@ pos_test_labels  = os.listdir('/home/kraudust/git/personal_git/byu_classes/deep_
 neg_test_filenames = os.listdir('/home/kraudust/git/personal_git/byu_classes/deep_learning/lab6_cancer_detector/cancer_data/inputs/test/neg')
 neg_test_labels  = os.listdir('/home/kraudust/git/personal_git/byu_classes/deep_learning/lab6_cancer_detector/cancer_data/outputs/test/neg')
 
-n = 300 #number of training images to use
+n = 300 #n*2 = number of training images to use
 train_index = random.sample(range(len(pos_train_filenames)),n)
 im_size = 512
 train_ims = np.zeros((2*n,im_size,im_size,3)).astype(np.float32)
