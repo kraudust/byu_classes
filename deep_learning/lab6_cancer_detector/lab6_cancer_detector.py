@@ -8,7 +8,7 @@ import random
 from pdb import set_trace as stop
 import pickle
 #----------------------------------CONVOLUTION FUNCTION-------------------------------------------------------
-def conv( x, filter_size=3, stride=2, num_filters=64, is_output=False, name="conv" ):
+def conv( x, filter_size=3, stride=1, num_filters=64, is_output=False, name="conv" ):
         '''
         x is an input tensor (4 dimensional)
         Declare a name scope using the "name" parameter
@@ -32,30 +32,23 @@ def conv( x, filter_size=3, stride=2, num_filters=64, is_output=False, name="con
                 return tf.nn.relu(conv_bias)
             else:
                 return conv_bias
-#---------------------------------Fully Connected Function ---------------------------------------------------
-def fc(x, out_size=50, is_output=False, name="fc"):
-        '''
-        x is an input tensor
-        Declare a name scope using the "name" parameter
-        Within that scope:
-            Create a W filter variable with the proper size
-            Create a B bias variable with the proper size
-            Multiply x by W and add b
-            If is_output is False,
-                Call the tf.nn.relu function
-            Return the final op
-        '''
-        x_shape = x.get_shape().as_list()
-        with tf.name_scope(name):
-            W = tf.get_variable(name+"_weights",shape=[x_shape[1], out_size], initializer=tf.contrib.layers.variance_scaling_initializer())
-            # W = tf.Variable(tf.random_normal([x_shape[1], out_size]), name = name+"_weights")
-            # b = tf.get_variable(name+"_b",shape=[out_size], initializer=tf.contrib.layers.variance_scaling_initializer())
-            b = tf.Variable(tf.random_normal([out_size]), name = name+"_b")
-            y = tf.nn.bias_add(tf.matmul(x,W),b)
-            if not is_output:
-                return tf.nn.relu(y)
-            else:
-                return
+
+#-----------------------------------------------Max Pool -----------------------------------------------------
+def max_pool(x, k_size = 2, stride = 2, name = "max_pool"):
+    with tf.name_scope(name):
+        out = tf.nn.max_pool(x,ksize = [1,k_size,k_size,1], strides = [1,stride,stride,1],padding = 'VALID')
+        return out
+
+#-----------------------------------------------Up-Convolution Function---------------------------------------
+def upconv(x,filter_size=2, stride = 2, output_channels =64, name="upconv"):
+    x_shape = x.get_shape().as_list() #returns a list of the shape of the input tensor
+    # batch_size = tf.shape(x)[0]
+    output_shape = [x_shape[0], stride*x_shape[1], stride*x_shape[2], output_channels]
+    strides = [1, stride, stride, 1]
+    with tf.name_scope(name):
+        w_filter = tf.get_variable(name+"_filter",shape=[x_shape[1],x_shape[2],output_channels,x_shape[3]], initializer=tf.contrib.layers.variance_scaling_initializer())
+        out = tf.nn.conv2d_transpose(x,w_filter, output_shape, strides, padding='SAME')
+        return out
 
 #------------------------------------------------Load Data ---------------------------------------------------
 pos_train_filenames = os.listdir('/home/kraudust/git/personal_git/byu_classes/deep_learning/lab6_cancer_detector/cancer_data/inputs/train/pos')
@@ -67,7 +60,8 @@ pos_test_labels  = os.listdir('/home/kraudust/git/personal_git/byu_classes/deep_
 neg_test_filenames = os.listdir('/home/kraudust/git/personal_git/byu_classes/deep_learning/lab6_cancer_detector/cancer_data/inputs/test/neg')
 neg_test_labels  = os.listdir('/home/kraudust/git/personal_git/byu_classes/deep_learning/lab6_cancer_detector/cancer_data/outputs/test/neg')
 
-n = 300 #n*2 = number of training images to use
+# n = 300 #n*2 = number of training images to use
+n = 10
 train_index = random.sample(range(len(pos_train_filenames)),n)
 im_size = 512
 train_ims = np.zeros((2*n,im_size,im_size,3)).astype(np.float32)
@@ -89,7 +83,8 @@ for i in xrange(n):
     print i
 
 #load test data into matrices
-for i in xrange(len(neg_test_filenames)):
+# for i in xrange(len(neg_test_filenames)):
+for i in xrange(10):
     if i < 75:
         test_im_pos = skio.imread(data_dir + 'inputs/test/pos/' + pos_test_filenames[i])
         test_im_neg = skio.imread(data_dir + 'inputs/test/neg/' + neg_test_filenames[i])
@@ -110,25 +105,38 @@ for i in xrange(len(neg_test_filenames)):
 # whiten data
 train_ims = (train_ims - np.mean(train_ims,0))/(np.std(train_ims,0))
 test_ims = (test_ims - np.mean(test_ims,0))/(np.std(test_ims,0))
-#------------------------------------------------------------------------------------------------------------
+
+#--------------------------------------------Design Neural Net---------------------------------------------
+batch_size = 5
+input_images = tf.placeholder(tf.float32,[batch_size,im_size,im_size,3],name='image')
+label_images = tf.placeholder(tf.float32,[batch_size, im_size, im_size,1],name = 'label')
+#define the neural net
+l0 = conv(input_images, name='conv0')
+l1 = conv(l0, name = 'conv1')
+# l2 = tf.nn.max_pool(l1,ksize = [1,2,2,1], strides = [1,2,2,1],padding = 'VALID', name = 'l2')
+l2 = max_pool(l1, name = 'pool2')
+l3 = conv(l2, name = 'conv3', num_filters = 128)
+l4 = conv(l3, name = 'conv4', num_filters = 128)
+l5 = upconv(l4, name="upconv5")
+l6 = conv(l5, name = 'conv6')
+l7 = tf.concat([l1, l6], 3, name='concat')
+l8 = conv(l7,name = 'conv8')
+l9 = conv(l8,name = 'conv9')
+l10 = conv(l9,name = 'conv10', num_filters = 2,filter_size = 1 )
+score = tf.add(l10,1.0)
 
 
 
+#------------------------------------------------Run Neural Net--------------------------------------------
+sess = tf.Session()
+init = tf.global_variables_initializer()
+sess.run(init)
+writer = tf.summary.FileWriter("./tf_logs",sess.graph)
+train_im = np.reshape(train_ims[0:batch_size,:,:,:],[batch_size,im_size,im_size,3])
+train_lab = np.reshape(train_labs[0:batch_size,:,:,:],[batch_size,im_size,im_size,1])
+sess.run(l2, feed_dict = {input_images:train_im, label_images:train_lab})
+writer.close()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-stop()
+# stop()
