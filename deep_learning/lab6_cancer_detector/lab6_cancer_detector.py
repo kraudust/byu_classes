@@ -105,11 +105,11 @@ for i in xrange(10):
 # whiten data
 train_ims = (train_ims - np.mean(train_ims,0))/(np.std(train_ims,0))
 test_ims = (test_ims - np.mean(test_ims,0))/(np.std(test_ims,0))
-
+print "Finished whitening data..."
 #--------------------------------------------Design Neural Net---------------------------------------------
-batch_size = 5
+batch_size = 2
 input_images = tf.placeholder(tf.float32,[batch_size,im_size,im_size,3],name='image')
-label_images = tf.placeholder(tf.float32,[batch_size, im_size, im_size,1],name = 'label')
+label_images = tf.placeholder(tf.int64,[batch_size, im_size, im_size],name = 'label')
 #define the neural net
 l0 = conv(input_images, name='conv0')
 l1 = conv(l0, name = 'conv1')
@@ -122,21 +122,27 @@ l6 = conv(l5, name = 'conv6')
 l7 = tf.concat([l1, l6], 3, name='concat')
 l8 = conv(l7,name = 'conv8')
 l9 = conv(l8,name = 'conv9')
-l10 = conv(l9,name = 'conv10', num_filters = 2,filter_size = 1 )
-score = tf.add(l10,1.0)
+score = conv(l9,name = 'conv10', num_filters = 1,filter_size = 1 , is_output = True)
 
+#calculate loss
+with tf.name_scope('softmax_cross_entropy_loss'):
+    loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=label_images, logits = score))
 
-
+#Optimizer
+with tf.name_scope('optimizer'):
+    train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
+print "finished building neural net..."
 #------------------------------------------------Run Neural Net--------------------------------------------
 sess = tf.Session()
 init = tf.global_variables_initializer()
 sess.run(init)
 writer = tf.summary.FileWriter("./tf_logs",sess.graph)
 train_im = np.reshape(train_ims[0:batch_size,:,:,:],[batch_size,im_size,im_size,3])
-train_lab = np.reshape(train_labs[0:batch_size,:,:,:],[batch_size,im_size,im_size,1])
-sess.run(l2, feed_dict = {input_images:train_im, label_images:train_lab})
+train_lab = np.reshape(train_labs[0:batch_size,:,:,:],[batch_size,im_size,im_size]).astype(np.int64)
+print np.rank(train_lab)
+# sess.run(l2, feed_dict = {input_images:train_im, label_images:train_lab})
+for i in range(30):
+    sess.run(train_step, feed_dict = {input_images: train_im, label_images: train_lab})
+    print sess.run(loss, feed_dict = {input_images: train_im, label_images: train_lab})
 writer.close()
 
-
-
-# stop()
