@@ -157,9 +157,18 @@ tf.summary.image('im_image', tf.cast(train_im, tf.float32))
 merged = tf.summary.merge_all()
 
 print "finished initializing neural net..."
-# for i in range(1):
+num_steps = 1000
+for i in range(num_steps):
+    sess.run(train_step, feed_dict = {input_images: train_im, label_images: train_lab})
+    print sess.run(accuracy, feed_dict = {input_images: train_im, label_images: train_lab})
+    print sess.run(loss, feed_dict = {input_images: train_im, label_images: train_lab})
+    print i, '\n'
+    if i == num_steps-1:
+        score_, ss = sess.run([score, merged], feed_dict = {input_images: train_im, label_images: train_lab})
+
     # print "running train step ", i
-score_, ss = sess.run([score, merged], feed_dict = {input_images: train_im, label_images: train_lab})
+
+# score_, ss = sess.run([score, merged], feed_dict = {input_images: train_im, label_images: train_lab})
 writer.add_summary(ss)
 # print sess.run(accuracy, feed_dict = {input_images: train_im, label_images: train_lab})
     # print "loss ", sess.run(loss, feed_dict = {input_images: train_im, label_images: train_lab})
