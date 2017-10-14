@@ -61,7 +61,7 @@ neg_test_filenames = os.listdir('/home/kraudust/git/personal_git/byu_classes/dee
 neg_test_labels  = os.listdir('/home/kraudust/git/personal_git/byu_classes/deep_learning/lab6_cancer_detector/cancer_data/outputs/test/neg')
 
 # n = 300 #n*2 = number of training images to use
-n = 1
+n = 30
 train_index = random.sample(range(len(pos_train_filenames)),n)
 # im_size = 512
 im_size = 256
@@ -111,22 +111,24 @@ train_ims = (train_ims - np.mean(train_ims,0))/(np.std(train_ims,0))
 test_ims = (test_ims - np.mean(test_ims,0))/(np.std(test_ims,0))
 print "Finished whitening data..."
 #--------------------------------------------Design Neural Net---------------------------------------------
-batch_size = 1
+batch_size = 15
 input_images = tf.placeholder(tf.float32,[batch_size,im_size,im_size,3],name='image')
 label_images = tf.placeholder(tf.int64,[batch_size, im_size, im_size],name = 'label')
 #define the neural net
 l0 = conv(input_images, name='conv0', num_filters = 8)
-# l1 = conv(l0, name = 'conv1', num_filters = 8)
-score = conv(l0, name = 'conv1', num_filters = 2, is_output=True)
+l1 = conv(l0, name = 'conv1', num_filters = 8)
+l2 = conv(l1, name = 'conv2', num_filters = 8)
+l3 = conv(l2, name = 'conv3', num_filters = 8)
+score = conv(l3, name = 'conv4', num_filters = 2, is_output=True)
 # l2 = tf.nn.max_pool(l1,ksize = [1,2,2,1], strides = [1,2,2,1],padding = 'VALID', name = 'l2')
 # l2 = max_pool(l1, name = 'pool2')
 # l3 = conv(l2, name = 'conv3', num_filters = 16)
 # l4 = conv(l3, name = 'conv4', num_filters = 16)
-# l5 = upconv(l4, name="upconv5", output_channels = 8)
+# l5 = upconv(l3, name="upconv5", output_channels = 8)
 # l6 = tf.concat([l1, l5], 3, name='concat')
 # l7 = conv(l6, name = 'conv6', num_filters = 8)
 # # l8 = conv(l7,name = 'conv8', num_filters = 8)
-# score = conv(l7,name = 'conv9', num_filters = 2, is_output = True)
+# score = conv(l6,name = 'conv9', num_filters = 2, is_output = True)
 output_image = tf.argmax(score,3)
 # score = conv(l9,name = 'conv10', num_filters = 1,filter_size = 2 , is_output = True)
 
@@ -142,29 +144,37 @@ with tf.name_scope('accuracy'):
 with tf.name_scope('optimizer'):
     train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
 print "finished building neural net..."
-#------------------------------------------------Run Neural Net--------------------------------------------
-# train_im = np.reshape(train_ims[0:batch_size,:,:,:],[batch_size,im_size,im_size,3])
-train_im = np.reshape(im_train_pos,[batch_size,im_size,im_size,3])
+#------------------------------------------------Run Neural Net-----------------------------------------------
+train_im = np.reshape(train_ims[0:batch_size,:,:,:],[batch_size,im_size,im_size,3])
+test_im = np.reshape(test_ims[0:batch_size,:,:,:],[batch_size,im_size,im_size,3])
+# train_im = np.reshape(im_train_pos,[batch_size,im_size,im_size,3])
 train_lab = np.reshape(train_labs[0:batch_size,:,:,:],[batch_size,im_size,im_size]).astype(np.int64)
+test_lab = np.reshape(test_labs[0:batch_size,:,:,:],[batch_size,im_size,im_size]).astype(np.int64)
 
 sess = tf.Session()
 init = tf.global_variables_initializer()
 sess.run(init)
 writer = tf.summary.FileWriter("./tf_logs",sess.graph)
-tf.summary.image('im_prediction', tf.cast(tf.reshape(output_image, [batch_size, im_size, im_size, 1]), tf.float32))
-tf.summary.image('im_label', tf.cast(tf.reshape(train_lab, [batch_size, im_size, im_size, 1]), tf.float32))
-tf.summary.image('im_image', tf.cast(train_im, tf.float32))
-merged = tf.summary.merge_all()
+pred = tf.summary.image('im_prediction', tf.cast(tf.reshape(output_image[0,:,:], [1, im_size, im_size, 1]), tf.float32))
+lab = tf.summary.image('im_label', tf.cast(tf.reshape(label_images[0,:,:], [1, im_size, im_size, 1]), tf.float32))
+im = tf.summary.image('im_image', tf.cast(tf.reshape(input_images[0,:,:,:], [1, im_size, im_size, 3]), tf.float32))
+loss_plot = tf.summary.scalar('im_loss', loss)
+acc_plot = tf.summary.scalar('im_accuracy', accuracy)
+# merged = tf.summary.merge_all()
+im_merged = tf.summary.merge([pred, lab, im])
+plot_merged = tf.summary.merge([acc_plot, loss_plot])
 
 print "finished initializing neural net..."
-num_steps = 1000
+num_steps = 2000
 for i in range(num_steps):
     sess.run(train_step, feed_dict = {input_images: train_im, label_images: train_lab})
+    plots = sess.run(plot_merged, feed_dict = {input_images: train_im, label_images: train_lab})
+    writer.add_summary(plots,i)
     print sess.run(accuracy, feed_dict = {input_images: train_im, label_images: train_lab})
     print sess.run(loss, feed_dict = {input_images: train_im, label_images: train_lab})
     print i, '\n'
     if i == num_steps-1:
-        score_, ss = sess.run([score, merged], feed_dict = {input_images: train_im, label_images: train_lab})
+        score_, ss = sess.run([score, im_merged], feed_dict = {input_images: train_im, label_images: train_lab})
 
     # print "running train step ", i
 
