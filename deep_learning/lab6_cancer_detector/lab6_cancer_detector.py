@@ -165,16 +165,16 @@ im_merged = tf.summary.merge([pred, lab, im])
 plot_merged = tf.summary.merge([acc_plot, loss_plot])
 
 print "finished initializing neural net..."
-num_steps = 2000
+num_steps = 4000
 for i in range(num_steps):
     sess.run(train_step, feed_dict = {input_images: train_im, label_images: train_lab})
     plots = sess.run(plot_merged, feed_dict = {input_images: train_im, label_images: train_lab})
     writer.add_summary(plots,i)
-    print sess.run(accuracy, feed_dict = {input_images: train_im, label_images: train_lab})
+    print sess.run(accuracy, feed_dict = {input_images: test_im, label_images: test_lab})
     print sess.run(loss, feed_dict = {input_images: train_im, label_images: train_lab})
     print i, '\n'
     if i == num_steps-1:
-        score_, ss = sess.run([score, im_merged], feed_dict = {input_images: train_im, label_images: train_lab})
+        ss = sess.run(im_merged, feed_dict = {input_images: test_im, label_images: test_lab})
 
     # print "running train step ", i
 
