@@ -124,9 +124,10 @@ train_ims = (train_ims - np.mean(train_ims,0))/(np.std(train_ims,0))
 test_ims = (test_ims - np.mean(test_ims,0))/(np.std(test_ims,0))
 print "Finished whitening data..."
 #--------------------------------------------Design Neural Net---------------------------------------------
-batch_size = 2
+batch_size = 10
 input_images = tf.placeholder(tf.float32,[batch_size,im_size,im_size,3],name='image')
 label_images = tf.placeholder(tf.int64,[batch_size, im_size, im_size],name = 'label')
+keep_prob = tf.placeholder(tf.float32, shape = [], name = 'keep_prob')
 #define the neural net
 l0 = conv(input_images, name='conv0', num_filters = 64)
 l1 = conv(l0, name = 'conv1', num_filters = 64)
@@ -148,7 +149,8 @@ l12 = upconv(l11, name = 'upconv12', output_channels = 64)
 l13 = tf.concat([l1,l12], 3, name = 'concat13')
 l14 = conv(l13, name = 'conv14', num_filters = 64)
 l15 = conv(l14, name = 'conv15', num_filters = 64)
-score = conv(l15, name = 'conv16', num_filters = 2, is_output = True)
+l16 = conv(l15, name = 'conv16', num_filters = 2, is_output = True)
+score = tf.nn.dropout(l16, keep_prob, name = 'dropout')
 # l5 = upconv(l4, name="upconv5", output_channels = 64)
 # l6 = tf.concat([l1, l5], 3, name='concat')
 # l7 = conv(l6, name = 'conv7', num_filters = 64)
@@ -202,10 +204,12 @@ acc_plot_test = tf.summary.scalar('im_accuracy_test', accuracy)
 
 print "finished initializing neural net..."
 num_steps = 1000
+prob = 0.6
+prob_1 = 1.0
 for i in range(num_steps):
-    if i == 0:
-        train_index = random.sample(range(n),batch_size)
-        test_index = random.sample(range(t), batch_size)
+    # if i == 0:
+    train_index = random.sample(range(n),batch_size)
+    test_index = random.sample(range(t), batch_size)
     test_im[0,:,:,:] = test_ims[0,:,:]
     test_lab[0,:,:] = np.reshape(test_labs[0], [im_size,im_size])
     for j in xrange(batch_size):
@@ -221,26 +225,26 @@ for i in range(num_steps):
     # train_lab = np.reshape(train_labs[0:batch_size,:,:,:],[batch_size,im_size,im_size]).astype(np.int64)
     # test_lab = np.reshape(test_labs[0:batch_size,:,:,:],[batch_size,im_size,im_size]).astype(np.int64)
 
-    sess.run(train_step, feed_dict = {input_images: train_im, label_images: train_lab})
-    loss_plot_ = sess.run(loss_plot, feed_dict = {input_images: train_im, label_images: train_lab})
-    acc_plot_ = sess.run(acc_plot, feed_dict = {input_images: train_im, label_images: train_lab})
-    acc_plot_test_ = sess.run(acc_plot_test, feed_dict = {input_images: test_im, label_images: test_lab})
+    sess.run(train_step, feed_dict = {input_images: train_im, label_images: train_lab, keep_prob: prob})
+    loss_plot_ = sess.run(loss_plot, feed_dict = {input_images: train_im, label_images: train_lab, keep_prob:prob_1})
+    acc_plot_ = sess.run(acc_plot, feed_dict = {input_images: train_im, label_images: train_lab, keep_prob: prob_1})
+    acc_plot_test_ = sess.run(acc_plot_test, feed_dict = {input_images: test_im, label_images: test_lab, keep_prob: prob_1})
     writer.add_summary(loss_plot_,i)
     writer.add_summary(acc_plot_,i)
     writer.add_summary(acc_plot_test_,i)
-    print sess.run(accuracy, feed_dict = {input_images: train_im, label_images: train_lab})
-    print sess.run(loss, feed_dict = {input_images: train_im, label_images: train_lab})
+    print sess.run(accuracy, feed_dict = {input_images: train_im, label_images: train_lab, keep_prob: prob_1})
+    print sess.run(loss, feed_dict = {input_images: train_im, label_images: train_lab, keep_prob: prob_1})
     print i, '\n'
 
-    if i % 100.0 == 0.0:
+    if i % 10.0 == 0.0:
         save_path = saver.save(sess, "tmp/epoch_"+str(i)+".ckpt")
         print("Model saved in file: %s" % save_path)
-        images1 = sess.run(test_pred,  feed_dict = {input_images: test_im, label_images: test_lab})
+        images1 = sess.run(test_pred,  feed_dict = {input_images: test_im, label_images: test_lab, keep_prob: prob_1})
         # images = sess.run([pred, lab, im],  feed_dict = {input_images: train_im, label_images: train_lab})
         writer.add_summary(images1,i)
     if i == num_steps-1:
-        images2 = sess.run(test_lab_sum,  feed_dict = {input_images: test_im, label_images: test_lab})
-        images3 = sess.run(test_im_sum,  feed_dict = {input_images: test_im, label_images: test_lab})
+        images2 = sess.run(test_lab_sum,  feed_dict = {input_images: test_im, label_images: test_lab, keep_prob: prob_1})
+        images3 = sess.run(test_im_sum,  feed_dict = {input_images: test_im, label_images: test_lab, keep_prob: prob_1})
         # images2_t = sess.run(test_lab,  feed_dict = {input_images: test_im[0,:,:,:], label_images: test_lab})
         # images3_t = sess.run(test_im,  feed_dict = {input_images: test_im[0,:,:,:], label_images: test_lab})
         writer.add_summary(images2)
