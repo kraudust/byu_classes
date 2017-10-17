@@ -162,6 +162,9 @@ output_image = tf.argmax(score,3)
 #calculate loss
 with tf.name_scope('softmax_cross_entropy_loss'):
     loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=label_images, logits = score))
+    # vars = tf.trainable_variables()
+    # lossL2 = tf.add_n([tf.nn.l2_loss(v) for v in vars])*0.001
+    # loss = tf.add(tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=label_images, logits = score)), lossL2)
 
 #calculate accuracy
 with tf.name_scope('accuracy'):
@@ -186,7 +189,7 @@ sess = tf.Session()
 saver = tf.train.Saver()
 writer = tf.summary.FileWriter("./tf_logs",sess.graph)
 #uncomment the line below to start from previous weights
-# saver.restore(sess, "tmp/epoch_80.ckpt")
+# saver.restore(sess, "dropout_data/epoch_600.ckpt")
 #uncomment the 2 lines below to start from scratch
 init = tf.global_variables_initializer()
 sess.run(init)
@@ -204,7 +207,8 @@ acc_plot_test = tf.summary.scalar('im_accuracy_test', accuracy)
 
 print "finished initializing neural net..."
 num_steps = 1000
-prob = 0.6
+# prob = 0.6
+prob = 1.0
 prob_1 = 1.0
 for i in range(num_steps):
     # if i == 0:
