@@ -242,7 +242,6 @@ for i in range(num_steps):
         images1 = sess.run(test_pred,  feed_dict = {input_images: test_im, label_images: test_lab, keep_prob: prob_1})
         # images = sess.run([pred, lab, im],  feed_dict = {input_images: train_im, label_images: train_lab})
         writer.add_summary(images1,i)
-    if i == num_steps-1:
         images2 = sess.run(test_lab_sum,  feed_dict = {input_images: test_im, label_images: test_lab, keep_prob: prob_1})
         images3 = sess.run(test_im_sum,  feed_dict = {input_images: test_im, label_images: test_lab, keep_prob: prob_1})
         # images2_t = sess.run(test_lab,  feed_dict = {input_images: test_im[0,:,:,:], label_images: test_lab})
