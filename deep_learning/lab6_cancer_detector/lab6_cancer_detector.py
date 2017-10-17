@@ -124,7 +124,7 @@ train_ims = (train_ims - np.mean(train_ims,0))/(np.std(train_ims,0))
 test_ims = (test_ims - np.mean(test_ims,0))/(np.std(test_ims,0))
 print "Finished whitening data..."
 #--------------------------------------------Design Neural Net---------------------------------------------
-batch_size = 10
+batch_size = 2
 input_images = tf.placeholder(tf.float32,[batch_size,im_size,im_size,3],name='image')
 label_images = tf.placeholder(tf.int64,[batch_size, im_size, im_size],name = 'label')
 #define the neural net
