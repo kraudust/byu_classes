@@ -103,7 +103,6 @@ test_labs[0,:,:,:] = transform.resize(test_im_lab_pos, (im_size, im_size, 1))
 
 for i in xrange(1, t):
     if i < 75:
-        print test_index[i]
         test_im_pos = skio.imread(data_dir + 'inputs/test/pos/' + pos_test_filenames[test_index[i]])
         # test_im_neg = skio.imread(data_dir + 'inputs/test/neg/' + neg_test_filenames[i])
         test_im_lab_pos = skio.imread(data_dir + 'outputs/test/pos/' + pos_test_labels[test_index[i]])
@@ -125,7 +124,7 @@ train_ims = (train_ims - np.mean(train_ims,0))/(np.std(train_ims,0))
 test_ims = (test_ims - np.mean(test_ims,0))/(np.std(test_ims,0))
 print "Finished whitening data..."
 #--------------------------------------------Design Neural Net---------------------------------------------
-batch_size = 3
+batch_size = 10
 input_images = tf.placeholder(tf.float32,[batch_size,im_size,im_size,3],name='image')
 label_images = tf.placeholder(tf.int64,[batch_size, im_size, im_size],name = 'label')
 #define the neural net
@@ -192,22 +191,23 @@ acc_plot_test = tf.summary.scalar('im_accuracy_test', accuracy)
 print "finished initializing neural net..."
 num_steps = 1000
 for i in range(num_steps):
-    train_index = random.sample(range(n),batch_size)
-    test_index = random.sample(range(t), batch_size)
-    test_im[0,:,:,:] = test_ims[0,:,:,:]
-    test_lab[0,:,:] = tf.reshape(test_labs[0,:,:,:],[im_size, im_size, 1])
-    for i in xrange(batch_size):
-        train_im[i,:,:,:] = train_ims[train_index[i], :,:,:]
-        train_lab[i,:,:] = tf.reshape(train_labs[train_index[i], :,:,:], [im_size, im_size,1])
-        if i > 0:
-            test_im[i,:,:,:] = test_ims[train_index[i], :,:,:]
-            test_lab[i,:,:] = tf.reshape(test_labs[test_index[i], :,:,:], [im_size, im_size,1])
+    if i == 0:
+        train_index = random.sample(range(n),batch_size)
+        test_index = random.sample(range(t), batch_size)
+    test_im[0,:,:,:] = test_ims[0,:,:]
+    test_lab[0,:,:] = np.reshape(test_labs[0], [im_size,im_size])
+    for j in xrange(batch_size):
+        train_im[j,:,:,:] = train_ims[train_index[j], :,:,:]
+        train_lab[j,:,:] = np.reshape(train_labs[train_index[j]], [im_size, im_size])
+        if j > 0:
+            test_im[j,:,:,:] = test_ims[test_index[j], :,:,:]
+            test_lab[j,:,:] = np.reshape(test_labs[test_index[j]], [im_size, im_size])
 
     # test_index = random.sample(range(len(pos_test_filenames)), 1)
-    train_im = np.reshape(train_ims[0:batch_size,:,:,:],[batch_size,im_size,im_size,3])
-    test_im = np.reshape(test_ims[0:batch_size,:,:,:],[batch_size,im_size,im_size,3])
-    train_lab = np.reshape(train_labs[0:batch_size,:,:,:],[batch_size,im_size,im_size]).astype(np.int64)
-    test_lab = np.reshape(test_labs[0:batch_size,:,:,:],[batch_size,im_size,im_size]).astype(np.int64)
+    # train_im = np.reshape(train_ims[0:batch_size,:,:,:],[batch_size,im_size,im_size,3])
+    # test_im = np.reshape(test_ims[0:batch_size,:,:,:],[batch_size,im_size,im_size,3])
+    # train_lab = np.reshape(train_labs[0:batch_size,:,:,:],[batch_size,im_size,im_size]).astype(np.int64)
+    # test_lab = np.reshape(test_labs[0:batch_size,:,:,:],[batch_size,im_size,im_size]).astype(np.int64)
 
     sess.run(train_step, feed_dict = {input_images: train_im, label_images: train_lab})
     loss_plot_ = sess.run(loss_plot, feed_dict = {input_images: train_im, label_images: train_lab})
