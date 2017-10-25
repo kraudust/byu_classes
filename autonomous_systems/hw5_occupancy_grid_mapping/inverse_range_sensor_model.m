@@ -8,8 +8,10 @@ th = xt(3);
 
 %Sensor parameters
 l0 = 0;
-l_occ = 0.7;
-l_free = 0.3;
+p_occ = 0.8;
+p_free = 0.4;
+l_occ = log(p_occ/(1-p_occ));
+l_free = log(p_free/(1-p_free));
 alpha = 1; %thickness of obstacles in m
 beta = 5*pi/180; %the angle the sensor shoots out at
 z_max = 150; %m
