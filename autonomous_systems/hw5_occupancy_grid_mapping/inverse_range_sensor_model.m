@@ -1,4 +1,4 @@
-function l = inverse_range_sensor_model(mi, xt, zt)
+function l = inverse_range_sensor_model(mi, xt, zt, thk)
 % Table 9.2 Algorithm in probabilistic robotics
 xi = mi(1);
 yi = mi(2);
@@ -17,14 +17,18 @@ z_max = 150; %m
 %Compute range and bearing to cell mi and the closest beam index 
 r = sqrt((xi-x)^2 + (yi-y)^2);
 phi = atan2(yi-y, xi-x) - th;
-[~, k] = min(abs(phi - zt(2,:))); % find the sensor index
-
-if r > min(z_max, zt(1,k) + alpha/2) || abs(phi - zt(2,k)) > beta/2
+[~, k] = min(abs(phi - thk)); % find the sensor index
+if isnan(zt(1,k))
+    zt(1,k) = 9999999;
+end
+if r > min(z_max, zt(1,k) + alpha/2) || abs(phi - thk(k)) > beta/2
     l = l0;
 elseif zt(1,k) < z_max && abs(r - zt(1,k)) < alpha/2
     l = l_occ;
 elseif r <= zt(1,k)
     l = l_free;
+else
+    mi
 end
 end
 
