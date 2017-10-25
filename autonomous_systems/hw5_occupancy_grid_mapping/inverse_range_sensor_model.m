@@ -8,7 +8,7 @@ th = xt(3);
 
 %Sensor parameters
 l0 = 0;
-p_occ = 0.8;
+p_occ = 0.7;
 p_free = 0.4;
 l_occ = log(p_occ/(1-p_occ));
 l_free = log(p_free/(1-p_free));
@@ -29,8 +29,6 @@ elseif zt(1,k) < z_max && abs(r - zt(1,k)) < alpha/2
     l = l_occ;
 elseif r <= zt(1,k)
     l = l_free;
-else
-    mi
 end
 end
 
