@@ -17,3 +17,8 @@ for k = 1:size(X,2)
         end
     end
 end
+
+% Convert l to actual probabilites from log probabilites
+l_prob = 1 - 1./(1+exp(l));
+bar3(l_prob);
+

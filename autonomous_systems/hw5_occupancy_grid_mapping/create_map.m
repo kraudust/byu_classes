@@ -117,7 +117,7 @@ plot(xm,ym,'.');
 axis([0 100 0 100]);
 axis('square'); 
 hold on;
-pause;
+%pause;
 
 % Plot the sensed cells (hits) based on robot pose and sensor measurements 
 for n = 1:Nsteps
@@ -125,7 +125,7 @@ for n = 1:Nsteps
     yhit = X(2,n) + z(1,:,n).*sin(X(3,n)+thk);
     plot(xhit,yhit,'ro');
     plot(X(1,n),X(2,n),'b+');
-    pause(0.2);
+    %pause(0.2);
 end 
 
 hold off;
