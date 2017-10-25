@@ -9,7 +9,7 @@ th = xt(3);
 %Sensor parameters
 l0 = 0;
 l_occ = 0.7;
-l__free = 0.3;
+l_free = 0.3;
 alpha = 1; %thickness of obstacles in m
 beta = 5*pi/180; %the angle the sensor shoots out at
 z_max = 150; %m
@@ -21,9 +21,9 @@ phi = atan2(yi-y, xi-x) - th;
 
 if r > min(z_max, zt(1,k) + alpha/2) || abs(phi - zt(2,k)) > beta/2
     l = l0;
-elseif z(1,k) < z_max && abs(r - z(1,k)) < alpha/2
+elseif zt(1,k) < z_max && abs(r - zt(1,k)) < alpha/2
     l = l_occ;
-elseif r <= z(1,k)
+elseif r <= zt(1,k)
     l = l_free;
 end
 end
