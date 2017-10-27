@@ -167,38 +167,51 @@ gen_im = tf.summary.image('generated_image',x_tild,max_outputs = batch_size)
 real_im = tf.summary.image('real_image',x,max_outputs = batch_size)
 merged = tf.summary.merge_all()
 
-# Train the GAN!!
-for i in xrange(num_iterations):
-    for t in xrange(n_critic):
-        batch = get_data_batch(filenames, batch_size, im_size, data_path)
-        zin = np.random.uniform(size=(batch_size,100))
-        epsin = np.random.uniform(size = (batch_size,1,1,1))
-        disc_opt, ss = sess.run([wopt,merged], feed_dict={z:zin, x:batch, eps:epsin})
-    zin = np.random.uniform(size=(batch_size,100))
-    gen_opt, ss = sess.run([thopt, merged], feed_dict = {z:zin, x:batch})
-    writer.add_summary(ss,i)
-    saver.save(sess, "GAN.ckpt")
-    print i*n_critic*batch_size, ' images trained on'
-    print i, '\n'
+# # Train the GAN!!
+# for i in xrange(num_iterations):
+#     for t in xrange(n_critic):
+#         batch = get_data_batch(filenames, batch_size, im_size, data_path)
+#         zin = np.random.uniform(size=(batch_size,100))
+#         epsin = np.random.uniform(size = (batch_size,1,1,1))
+#         disc_opt, ss = sess.run([wopt,merged], feed_dict={z:zin, x:batch, eps:epsin})
+#     zin = np.random.uniform(size=(batch_size,100))
+#     gen_opt, ss = sess.run([thopt, merged], feed_dict = {z:zin, x:batch})
+#     writer.add_summary(ss,i)
+#     saver.save(sess, "GAN.ckpt")
+#     print i*n_critic*batch_size, ' images trained on'
+#     print i, '\n'
 
-# Generate a single image
-# batch_size = 2
-# zin1 = np.random.uniform(size=(100))
-# zin2 = np.random.uniform(size=(100))
-# num_steps = 10
-# z_array = np.array([slerp(zin1,zin2,t) for t in np.arange(0.0,1.0,1.0/num_steps)])
-# im_interp = tf.summary.image('image_interpolation',x_tild,max_outputs = num_steps)
-# im_array, write = sess.run([x_tild, im_interp], feed_dict = {z:z_array})
-# clip_neg = im_array < 0
-# im_array[clip_neg] = 0.0
-# fig = plt.figure()
-# for i in xrange(num_steps):
-#     fig.add_subplot(1,num_steps,i+1)
-#     plt.imshow(im_array[i,:,:,:])
-#     plt.axis('off')
-#     print i
+# Generate smooth interpolation image
+zin1 = np.random.uniform(size=(100))
+zin2 = np.random.uniform(size=(100))
+num_steps = 10
+z_array = np.array([slerp(zin1,zin2,t) for t in np.arange(0.0,1.0,1.0/num_steps)])
+im_array = sess.run(x_tild, feed_dict = {z:z_array})
+clip_neg = im_array < 0
+im_array[clip_neg] = 0.0
+fig = plt.figure()
+for i in xrange(num_steps):
+    fig.add_subplot(1,num_steps,i+1)
+    plt.imshow(im_array[i,:,:,:])
+    plt.axis('off')
+    print i
 # plt.show()
-# writer.add_summary(write)
+
+# Generate a bunch of faces
+batch_size = 64
+side = int(np.sqrt(batch_size))
+z_ = np.random.uniform(size=(batch_size,100))
+im_array = sess.run(x_tild, feed_dict = {z:z_})
+clip_neg = im_array < 0
+im_array[clip_neg] = 0.0
+fig2 = plt.figure()
+for i in xrange(batch_size):
+    fig2.add_subplot(side, side, i+1)
+    plt.imshow(im_array[i,:,:,:])
+    plt.axis('off')
+    print i
+plt.show()
+    
 
 writer.close()
 
