@@ -20,7 +20,7 @@ def conv( x, filter_size=5, stride=2, num_filters=64, is_output=False, name="con
             conv_bias = tf.nn.bias_add(tf.nn.conv2d(x, w_filter, strides = [1, stride, stride, 1], padding="SAME"), bias)
             # conv_bias = tf.nn.bias_add(conv, bias)
             if not is_output:
-                return tf.nn.relu(conv_bias) #should I be using a relu here??
+                return tf.nn.relu(conv_bias) #I should use tf.nn.leaky_relu here, what function is this??
             else:
                 return conv_bias
 
@@ -36,7 +36,7 @@ def upconv(x,filter_size=5, stride = 2, num_filters = 64, name="upconv", is_outp
     strides_ = [1, stride, stride, 1]
     with tf.name_scope(name):
         if not is_output:
-            x = tf.contrib.layers.layer_norm(x,center=True) # why do this??
+            x = tf.contrib.layers.layer_norm(x)
         out = tf.nn.conv2d_transpose(x,w_filter, output_shape, strides = strides_, padding='SAME')
         out = tf.reshape(out,output_shape)
         if not is_output:
@@ -105,6 +105,10 @@ def get_data_batch(filenames, batch_size, im_size, data_path):
         im_batch[i,:,:,:] = transform.resize(image, (im_size, im_size, 3))
     return im_batch
 
+def slerp(p0, p1, t):
+    omega = np.arccos(np.dot(p0/np.linalg.norm(p0), p1/np.linalg.norm(p1)))
+    so = np.sin(omega)
+    return np.sin((1.0-t)*omega) / so * p0 + np.sin(t*omega)/so * p1
 
 #---------------------------------------Set up the GAN--------------------------------------------------------
 # Tensorflow parameters
@@ -150,9 +154,9 @@ data_path = '/home/kraudust/git/personal_git/byu_classes/deep_learning/lab7_wass
 filenames = os.listdir(data_path)
 sess = tf.Session()
 saver = tf.train.Saver()
-load_prev_weights = False
+load_prev_weights = True
 if load_prev_weights:
-    saver.restore(sess, "dropout_data/epoch_600.ckpt")
+    saver.restore(sess, "/home/kraudust/git/personal_git/byu_classes/deep_learning/lab7_wasserstein_GAN/train2/ckpt/GAN.ckpt")
 else:
     init = tf.global_variables_initializer()
     sess.run(init)
@@ -163,7 +167,6 @@ gen_im = tf.summary.image('generated_image',x_tild,max_outputs = batch_size)
 real_im = tf.summary.image('real_image',x,max_outputs = batch_size)
 merged = tf.summary.merge_all()
 
-
 # Train the GAN!!
 for i in xrange(num_iterations):
     for t in xrange(n_critic):
@@ -173,9 +176,29 @@ for i in xrange(num_iterations):
         disc_opt, ss = sess.run([wopt,merged], feed_dict={z:zin, x:batch, eps:epsin})
     zin = np.random.uniform(size=(batch_size,100))
     gen_opt, ss = sess.run([thopt, merged], feed_dict = {z:zin, x:batch})
-    writer.add_summary(ss,i*n_critic + t)
-    saver.save(sess, "GAN")
+    writer.add_summary(ss,i)
+    saver.save(sess, "GAN.ckpt")
     print i*n_critic*batch_size, ' images trained on'
+    print i, '\n'
+
+# Generate a single image
+# batch_size = 2
+# zin1 = np.random.uniform(size=(100))
+# zin2 = np.random.uniform(size=(100))
+# num_steps = 10
+# z_array = np.array([slerp(zin1,zin2,t) for t in np.arange(0.0,1.0,1.0/num_steps)])
+# im_interp = tf.summary.image('image_interpolation',x_tild,max_outputs = num_steps)
+# im_array, write = sess.run([x_tild, im_interp], feed_dict = {z:z_array})
+# clip_neg = im_array < 0
+# im_array[clip_neg] = 0.0
+# fig = plt.figure()
+# for i in xrange(num_steps):
+#     fig.add_subplot(1,num_steps,i+1)
+#     plt.imshow(im_array[i,:,:,:])
+#     plt.axis('off')
+#     print i
+# plt.show()
+# writer.add_summary(write)
 
 writer.close()
 
