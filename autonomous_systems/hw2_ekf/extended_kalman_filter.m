@@ -31,7 +31,7 @@ function [mu_t, sigma_t,K] = extended_kalman_filter(mu_tmin1, sigma_tmin1, u_tmi
             (m(i,2) - mu_tbar(2))/q             -(m(i,1) - mu_tbar(1))/q          -1];
         S_ti = H_ti*sigma_tbar*H_ti.' + Qt;
         K_ti = sigma_tbar*H_ti.'/(S_ti);
-        mu_tbar = mu_tbar + K_ti*(z_ti - z_thati);
+        mu_tbar = mu_tbar + K_ti*wrapToPi(z_ti - z_thati);
         sigma_tbar = (eye(3) - K_ti*H_ti)*sigma_tbar; 
         K(:,:,i) = K_ti;
     end
