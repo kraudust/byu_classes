@@ -22,7 +22,7 @@ alpha = [alpha1; alpha2; alpha3; alpha4];
 % xland = [6, -7, 6];
 % yland = [4, 8, -4];
 % lm = [xland', yland'];
-num_landmarks = 50;
+num_landmarks = 100;
 lm = 10-20*rand(num_landmarks,2);
 landmarks_seen = zeros(num_landmarks,1);
 
@@ -132,3 +132,4 @@ suptitle('Estimation Error')
 
 figure()
 surf(sigma(:,:,301))
+view(0,90)
