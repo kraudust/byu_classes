@@ -19,7 +19,7 @@ function draw_robot(t,xt,lm,r,phi,mu, sigma)
         else 
             update_plot(xt,P,h, i,lm,r,phi,mu, sigma);
         end
-        pause(0.02)
+%         pause(0.02)
     end
 end
 
@@ -55,7 +55,12 @@ function h_st = update_plot(xt,P,h_st,i,lm,r,phi,mu, sigma)
     h_st.lm_handle = scatter(lm(:,1),lm(:,2),20,'filled','k'); % true landmark position
     h_st.lm_est_handle = scatter(mu(4:2:end,i),mu(5:2:end,i),20,'filled','r'); %estimated landmark pos.
     ellipse_data = plot_covariance(mu(1:2,i), sigma(1:2,1:2,i));
-    h_st.cov_ellipses = plot(ellipse_data(:,1),ellipse_data(:,2));
+    h_st.cov_ellipses(1) = plot(ellipse_data(:,1),ellipse_data(:,2), 'r');
+    for j = 1:(size(mu, 1) - 3)/2
+        ellipse_data = plot_covariance(mu(4+2*(j-1):5+2*(j-1), i), sigma(4+2*(j-1):5+2*(j-1), 4+2*(j-1):5+2*(j-1), i));
+        h_st.cov_ellipses(j+1) = plot(ellipse_data(:,1),ellipse_data(:,2), 'r');
+    end
+    %h_st.cov_ellipses = plot(ellipse_data(:,1),ellipse_data(:,2));
     if plot_meas == true
         h_st.m_handle = scatter(xt(1,i) + r(:,i).*cos(xt(3,i) + phi(:,i)),xt(2,i) +...
             r(:,i).*sin(xt(3,i) + phi(:,i)),'bx'); % measurements
@@ -67,8 +72,14 @@ function h_st = update_plot(xt,P,h_st,i,lm,r,phi,mu, sigma)
     set(h_st.path_handle,'XData',xt(1,1:i), 'YData',xt(2,1:i)); % true path
     set(h_st.path_est_handle,'XData',mu(1,1:i),'YData',mu(2,1:i)); % estimated path
     set(h_st.lm_est_handle,'XData',mu(4:2:end,i),'YData',mu(5:2:end,i)); % estimated landmark positions
+    %ellipse_data = plot_covariance(mu(1:2,i), sigma(1:2,1:2,i));
     ellipse_data = plot_covariance(mu(1:2,i), sigma(1:2,1:2,i));
-    set(h_st.cov_ellipses,'XData',ellipse_data(:,1),'YData',ellipse_data(:,2));
+    set(h_st.cov_ellipses(1), 'XData',ellipse_data(:,1),'YData',ellipse_data(:,2));
+    for j = 1:(size(mu, 1) - 3)/2
+        ellipse_data = plot_covariance(mu(4+2*(j-1):5+2*(j-1), i), sigma(4+2*(j-1):5+2*(j-1), 4+2*(j-1):5+2*(j-1), i));
+        set(h_st.cov_ellipses(j+1), 'XData',ellipse_data(:,1),'YData',ellipse_data(:,2));
+        %h_st.cov_ellipses(j+1) = plot(ellipse_data(:,1),ellipse_data(:,2));
+    end
     if plot_meas == true
         set(h_st.m_handle,'XData',(xt(1,i) + r(:,i).*cos(xt(3,i) + phi(:,i)))',...
             'YData',(xt(2,i) + r(:,i).*sin(xt(3,i) + phi(:,i)))'); % measurements

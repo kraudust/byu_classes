@@ -21,9 +21,9 @@ alpha = [alpha1; alpha2; alpha3; alpha4];
 %Landmark locations
 % xland = [6, -7, 6];
 % yland = [4, 8, -4];
-% m = [xland', yland'];
-num_landmarks = 7;
-m = 10-20*rand(num_landmarks,2);
+% lm = [xland', yland'];
+num_landmarks = 50;
+lm = 10-20*rand(num_landmarks,2);
 landmarks_seen = zeros(num_landmarks,1);
 
 
@@ -49,7 +49,7 @@ for i = 1:length(t)-1
 end
 
 %Simulate range and bearing measurements
-[r, phi] = sim_measurements(m,sigma_r,sigma_phi,xt);
+[r, phi] = sim_measurements(lm,sigma_r,sigma_phi,xt);
 z = [r;phi];
 
 %Run EKF to get state estimates
@@ -62,72 +62,73 @@ sigma(2,2,1) = 0;
 sigma(3,3,1) = 0;
 mu(:,1) = 0;
 for i = 1:length(t)-1
-    [mu(:,i+1), sigma(:,:,i+1)] = ekf_slam(mu(:,i), sigma(:,:,i), u(:,i), z(:,i+1));
+    [mu(:,i+1), sigma(:,:,i+1)] = ekf_slam(mu(:,i), sigma(:,:,i), u(:,i), z(:,i+1), lm);
 end
 
-%plot_covariance(mu(1:2,8),sigma(1:2,1:2,8));
 %Draw Robot
-draw_robot(t,xt,m,r,phi,mu, sigma);
+draw_robot(t,xt,lm,r,phi,mu, sigma);
 
-% %Make Plots----------------------------------------------------------------
-% %States and State Estimates
-% figure()
-% subplot(3,1,1)
-% plot(t,xt(1,:))
-% hold on
-% plot(t,mu(1,:))
-% ylabel('x Position (m)')
-% legend('True State','EKF Estimate')
-% 
-% subplot(3,1,2)
-% plot(t,xt(2,:))
-% hold on
-% plot(t,mu(2,:))
-% ylabel('y Position (m)')
-% legend('True State','EKF Estimate')
-% 
-% subplot(3,1,3)
-% plot(t,xt(3,:))
-% hold on
-% plot(t,mu(3,:))
-% xlabel('Time (sec)')
-% ylabel('Heading (Rad)')
-% legend('True State','EKF Estimate')
-% suptitle('States and State Estimates')
-% 
-% %---------------------------------------
-% %Error
-% figure()
-% x_error = xt(1,:)-mu(1,:);
-% y_error = xt(2,:)-mu(2,:);
-% th_error = xt(3,:)-mu(3,:);
-% 
-% subplot(3,1,1)
-% plot(t,x_error)
-% hold on
-% x_upper = 2*reshape(sqrt(sigma(1,1,:)),1,length(t));
-% x_lower = -2*reshape(sqrt(sigma(1,1,:)),1,length(t));
-% plot(t,x_upper,'r')
-% plot(t,x_lower,'r')
-% ylabel('x Position Error (m)')
-% 
-% subplot(3,1,2)
-% plot(t,y_error)
-% hold on
-% y_upper = 2*reshape(sqrt(sigma(2,2,:)),1,length(t));
-% y_lower = -2*reshape(sqrt(sigma(2,2,:)),1,length(t));
-% plot(t,y_upper,'r')
-% plot(t,y_lower,'r')
-% ylabel('y Position Error (m)')
-% 
-% subplot(3,1,3)
-% plot(t,th_error)
-% hold on
-% th_upper = 2*reshape(sqrt(sigma(3,3,:)),1,length(t));
-% th_lower = -2*reshape(sqrt(sigma(3,3,:)),1,length(t));
-% plot(t,th_upper,'r')
-% plot(t,th_lower,'r')
-% xlabel('Time (sec)')
-% ylabel('Theta Angle Error (Rad)')
-% suptitle('Estimation Error')
+%Make Plots----------------------------------------------------------------
+%States and State Estimates
+figure()
+subplot(3,1,1)
+plot(t,xt(1,:))
+hold on
+plot(t,mu(1,:))
+ylabel('x Position (m)')
+legend('True State','EKF Estimate')
 
+subplot(3,1,2)
+plot(t,xt(2,:))
+hold on
+plot(t,mu(2,:))
+ylabel('y Position (m)')
+legend('True State','EKF Estimate')
+
+subplot(3,1,3)
+plot(t,xt(3,:))
+hold on
+plot(t,mu(3,:))
+xlabel('Time (sec)')
+ylabel('Heading (Rad)')
+legend('True State','EKF Estimate')
+suptitle('States and State Estimates')
+
+%---------------------------------------
+%Error
+figure()
+x_error = xt(1,:)-mu(1,:);
+y_error = xt(2,:)-mu(2,:);
+th_error = xt(3,:)-mu(3,:);
+
+subplot(3,1,1)
+plot(t,x_error)
+hold on
+x_upper = 2*reshape(sqrt(sigma(1,1,:)),1,length(t));
+x_lower = -2*reshape(sqrt(sigma(1,1,:)),1,length(t));
+plot(t,x_upper,'r')
+plot(t,x_lower,'r')
+ylabel('x Position Error (m)')
+
+subplot(3,1,2)
+plot(t,y_error)
+hold on
+y_upper = 2*reshape(sqrt(sigma(2,2,:)),1,length(t));
+y_lower = -2*reshape(sqrt(sigma(2,2,:)),1,length(t));
+plot(t,y_upper,'r')
+plot(t,y_lower,'r')
+ylabel('y Position Error (m)')
+
+subplot(3,1,3)
+plot(t,th_error)
+hold on
+th_upper = 2*reshape(sqrt(sigma(3,3,:)),1,length(t));
+th_lower = -2*reshape(sqrt(sigma(3,3,:)),1,length(t));
+plot(t,th_upper,'r')
+plot(t,th_lower,'r')
+xlabel('Time (sec)')
+ylabel('Theta Angle Error (Rad)')
+suptitle('Estimation Error')
+
+figure()
+surf(sigma(:,:,301))
