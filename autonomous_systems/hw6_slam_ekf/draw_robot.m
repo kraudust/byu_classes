@@ -19,6 +19,7 @@ function draw_robot(t,xt,lm,r,phi,mu, sigma)
         else 
             update_plot(xt,P,h, i,lm,r,phi,mu, sigma);
         end
+        %pause()
 %         pause(0.02)
     end
 end

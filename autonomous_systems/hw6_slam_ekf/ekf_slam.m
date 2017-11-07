@@ -31,7 +31,7 @@ function [mu_t, sigma_t] = ekf_slam(mu_tmin1, sigma_tmin1, u_tmin1, z_t, lm)
         r_ti = z_ti(1);
         phi_ti = z_ti(2);
         %figure out if landmark is in the field of view
-        if abs(wrapToPi(phi_ti)) < pi/2
+        if abs(wrapToPi(phi_ti)) < pi/4
                 %j = i;
             %if the landmark was never seen before, initialize it
             if landmarks_seen(i) == 0
