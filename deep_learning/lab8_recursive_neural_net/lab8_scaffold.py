@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from textloader import TextLoader
+from my_gru_class import mygru
 
 
 #
@@ -9,6 +10,7 @@ from textloader import TextLoader
 # Global variables
 
 batch_size = 50
+# batch_size = 2
 sequence_length = 50
 
 data_loader = TextLoader( ".", batch_size, sequence_length )
@@ -44,7 +46,7 @@ targets = tf.split( targ_ph, sequence_length, axis=1 )
 # targets is a list of length sequence_length
 # each element of targets is a 1D vector of length batch_size
 
-# ############################################################################################################
+# #####################################################################################################
 # YOUR COMPUTATION GRAPH HERE
 
 # create a BasicLSTMCell
@@ -52,34 +54,44 @@ targets = tf.split( targ_ph, sequence_length, axis=1 )
 #   use it to create an initial_state
 #     note that initial_state will be a *list* of tensors!
 cells = []
-lstm = tf.nn.rnn_cell.BasicLSTMCell(state_dim) # what dimension should I pass into here
 for i in xrange(num_layers):
-    cells.append(lstm) # should each layer have tyhe same lstm?
+    cells.append(tf.nn.rnn_cell.BasicLSTMCell(state_dim)) 
+    # cells.append(mygru(state_dim))
 rnn = tf.nn.rnn_cell.MultiRNNCell(cells)
-h0 = rnn.zero_state(batch_size, tf.float32)
+initial_state = rnn.zero_state(batch_size, tf.float32)
 
 # call seq2seq.rnn_decoder
-h, hf = tf.contrib.legacy_seq2seq.rnn_decoder(inputs, h0, rnn)
+outputs, final_state = tf.contrib.legacy_seq2seq.rnn_decoder(inputs, initial_state, rnn)
 
 # transform the list of state outputs to a list of logits.
 # use a linear transformation.
 W = tf.Variable(tf.random_normal([state_dim, vocab_size], stddev=0.02))
 b = tf.Variable(tf.random_normal([vocab_size], stddev=0.01))
-logits = [tf.matmul(x,W) + [b] * batch_size for x in h]
+logits = [tf.matmul(x,W) + [b]*batch_size for x in outputs]
 
 # call seq2seq.sequence_loss
 loss_weights = [1.0 for i in xrange(sequence_length)]
 loss = tf.contrib.legacy_seq2seq.sequence_loss(logits, targets, loss_weights)
 
 # create a training op using the Adam optimizer
-trainer = tf.train.AdamOptimizer().minimize(loss)
+optim = tf.train.AdamOptimizer().minimize(loss)
 
 # ------------------
 # YOUR SAMPLER GRAPH HERE
 
 # place your sampler graph here it will look a lot like your
 # computation graph, except with a "batch_size" of 1.
+s_batch_size = 1
+s_inputs = tf.placeholder( tf.int32, [s_batch_size], name='s_inputs')
+s_in_onehot = tf.one_hot( s_inputs, vocab_size, name='s_input_onehot')
 
+s_input = tf.split(s_in_onehot, 1)
+
+s_initial_state = rnn.zero_state(1,tf.float32)
+
+s_outputs, s_final_state = tf.contrib.legacy_seq2seq.rnn_decoder(s_input, s_initial_state, rnn)
+
+s_probs = tf.nn.softmax([tf.matmul(x,W) + [b]*1 for x in s_outputs])
 # remember, we want to reuse the parameters of the cell and whatever
 # parameters you used to transform state outputs to logits!
 
@@ -87,7 +99,7 @@ trainer = tf.train.AdamOptimizer().minimize(loss)
 # ==================================================================
 # ==================================================================
 # ==================================================================
-# ############################################################################################################
+# #####################################################################################################
 
 def sample( num=200, prime='ab' ):
 
@@ -128,7 +140,7 @@ def sample( num=200, prime='ab' ):
 
         # now sample (or pick the argmax)
         # sample = np.argmax( s_probsv[0] )
-        sample = np.random.choice( vocab_size, p=s_probsv[0] )
+        sample = np.random.choice( vocab_size, p=s_probsv[0][0] )
 
         pred = data_loader.chars[sample]
         ret += pred
@@ -150,7 +162,7 @@ lts = []
 
 print "FOUND %d BATCHES" % data_loader.num_batches
 
-for j in range(1000):
+for j in range(10000):
 
     state = sess.run( initial_state )
     data_loader.reset_batch_pointer()
@@ -180,10 +192,12 @@ for j in range(1000):
             print "%d %d\t%.4f" % ( j, i, lt )
             lts.append( lt )
 
-    print sample( num=60, prime="And " )
-#    print sample( num=60, prime="ababab" )
-#    print sample( num=60, prime="foo ba" )
-#    print sample( num=60, prime="abcdab" )
+    # print sample( num=60, prime="And " )
+    print sample( num = 60, prime='hey ')
+    # print sample( num=60, prime="The ")
+    # print sample( num=60, prime="ababab" )
+    # print sample( num=60, prime="foo ba" )
+    # print sample( num=60, prime="abcdab" )
 
 summary_writer.close()
 
