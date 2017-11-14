@@ -50,20 +50,33 @@ end
 
 %Simulate range and bearing measurements
 [r, phi] = sim_measurements(lm,sigma_r,sigma_phi,xt);
-z = [r;phi];
+for i = 1:length(t)
+    z(:, 1, i) = r(:,i);
+    z(:, 2, i) = phi(:,i);
+end
 
 % Run fast SLAM ----------------------------------------------------------------------------------------
-%Run EKF to get state estimates
-mu = zeros(3+2*num_landmarks,length(t)); %eq. 10.7 in probabilistic robotics
-sigma = zeros(3+2*num_landmarks,3+2*num_landmarks,length(t));
-%sigma(:,:,1) = eye(3);
-sigma(:,:,1) = 10^10*eye(3+2*num_landmarks);
-sigma(1,1,1) = 0;
-sigma(2,2,1) = 0;
-sigma(3,3,1) = 0;
-mu(:,1) = 0;
-for i = 1:length(t)-1
-    [mu(:,i+1), sigma(:,:,i+1)] = ekf_slam(mu(:,i), sigma(:,:,i), u(:,i), z(:,i+1), lm);
+
+%Generate Particles
+M = 1000; %number of particles
+rand_x = -10 + 20.*rand(1,M);
+rand_y = -10 + 20.*rand(1,M);
+rand_th = -pi + 2*pi.*rand(1,M);
+chi0 = [rand_x', rand_y', rand_th'];
+
+% Construct state structure Y (see eq. 13.11)
+Y(1).x = chi0;
+Y(1).mu = repmat([0, 0], [num_landmarks, 1]);
+Y(1).sigma = repmat(10^10*eye(2), [num_landmarks, 1]);
+
+% Run fast slam algorithm
+ct = 1;
+for i = 1:length(t)
+    Y(i+1) = fastSLAM(z(:,:,i), ct, u(:,i), Y(i));
+    ct = ct + 1;
+    if ct > num_landmarks
+        ct = 1;
+    end
 end
 
 %Draw Robot
