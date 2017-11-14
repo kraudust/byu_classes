@@ -12,6 +12,7 @@ function Y_t = fastSLAM(z_t, ct, u_tm1, Y_tm1)
         j = ct;
         r_tj = z_t(j,1);
         phi_tj = z_t(j,2);
+        z_jt = [r_tj; phi_tj];
         %if a landmark hasn't been seen before
         if landmarks_seen(j) == 0
             % particle k's estimate of landmark j's location (initialize)
@@ -29,12 +30,26 @@ function Y_t = fastSLAM(z_t, ct, u_tm1, Y_tm1)
             % calculate x and y distance from landmark extimate to particle estimate
             delta = [mu_tm1(j, 1) - xk_t(1); mu_tm1(j,2) - xk_t(2)];
             q = delta'*delta;
+            
+            % calculate zhat
+            z_hat = [sqrt(q);...
+                    atan2(delta(2), delta(1)) - xk_t(3)];
+            
             % calculate jacobian (got it from line 16 in table 10.1)
             H = (1/q) * [sqrt(q) * delta(1),    sqrt(q) * delta(2);...
                         -delta(2),              delta(1)];
-            Q = H*sigma_tm1
-                    
+            Q = H*sigma_tm1(2*j - 1: 2*j, :)*H' + Qt; % measurement covariance
+            K = sigma_tm1(2*j - 1: 2*j, :) * H'/Q; %calculate kalman gain
+            % mean and covariance of jth landmark from particle k
+            zdiff = z_jt - z_hat;
+            zdiff(2) = wrapToPi(zdiff(2));
+            mu_kj_t = mu_kj_tm1 + K*zdiff; 
+            sigma_kj_t = (eye(2) - K*H)*sigma_tm1(2*j - 1: 2*j, :);
+            w_k = ((det(2*pi*Q))^0.5)* exp(-0.5* zdiff' / Q * zdiff); % weight of particle k
         end
+        % store new variables in structure
+        Y_t.mu(j,:) = mu_kj_t; 
     end
+    Y_t = 7;
 end
 
