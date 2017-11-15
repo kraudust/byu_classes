@@ -22,7 +22,7 @@ alpha = [alpha1; alpha2; alpha3; alpha4];
 % xland = [6, -7, 6];
 % yland = [4, 8, -4];
 % lm = [xland', yland'];
-num_landmarks = 30;
+num_landmarks = 50;
 lm = 10-20*rand(num_landmarks,2);
 
 
@@ -31,7 +31,7 @@ sigma_r = 0.1;
 sigma_phi = 0.05;
 
 %Generate time vector (seconds)
-Ts = 0.05; 
+Ts = 0.1; 
 t = 0:Ts:30;
 
 %Generate control inputs (linear and angular velocities)
