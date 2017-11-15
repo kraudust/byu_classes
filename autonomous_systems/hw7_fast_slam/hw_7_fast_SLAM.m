@@ -26,13 +26,12 @@ num_landmarks = 30;
 lm = 10-20*rand(num_landmarks,2);
 
 
-
 %Standard deviations of range and bearing sensor noise in meters & radians
 sigma_r = 0.1;
 sigma_phi = 0.05;
 
 %Generate time vector (seconds)
-Ts = 0.1; 
+Ts = 0.05; 
 t = 0:Ts:30;
 
 %Generate control inputs (linear and angular velocities)
@@ -47,7 +46,7 @@ xt(:,1) = [x0;y0;th0];
 for i = 1:length(t)-1
     xt(:,i+1) = velocity_motion_model(u(:,i), xt(:,i), alpha, Ts);
 end
-xt(3,:) = wrapToPi(xt(3,:));
+% xt(3,:) = wrapToPi(xt(3,:));
 %Simulate range and bearing measurements
 [r, phi] = sim_measurements(lm,sigma_r,sigma_phi,xt);
 for i = 1:length(t)
@@ -75,12 +74,14 @@ w(:,1) = 1/M * ones(M,1);
 
 % Run fast slam algorithm
 ct = 1;
+fov = pi/2;
 for i = 1:length(t)-1
     [Y(i+1), w(:,i+1)] = fastSLAM(z(:,:,i), ct, u(:,i), Y(i));
     ct = ct + 1;
     if ct > num_landmarks
         ct = 1;
     end
+    i
 end
 
 % Get index of heaviest weighted particle at each time step for visualization
@@ -89,8 +90,10 @@ for i = 1:length(t)
     [~, idx] = max(w(:,i));
 %     x_est(:, i) = (Y(i).x(idx, :))'; %robot pose at each t: [x;y;th]
     x_est(:,i) = mean(Y(i).x,1);
-    lm_est(:, :, i) = Y(i).mu(:, :, idx); %landmark locations at each t: [x y; x y; ... ; x y]
-    lm_sigma(:,:, i) = Y(i).sigma(:, :, idx); %landmark covariance at each t: [2x2 sigma for lm1; 2x2 sigma for lm2 ...]
+%     lm_est(:, :, i) = Y(i).mu(:, :, idx); %landmark locations at each t: [x y; x y; ... ; x y]
+    lm_est(:,:,i) = mean(Y(i).mu, 3);
+%     lm_sigma(:,:, i) = Y(i).sigma(:, :, idx); %landmark covariance at each t: [2x2 sigma for lm1; 2x2 sigma for lm2 ...]
+    lm_sigma(:,:,i) = mean(Y(i).sigma,3);
 end
 
 % Get robot and landmark locations from heaviest weighted particle

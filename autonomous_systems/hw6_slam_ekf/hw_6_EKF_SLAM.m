@@ -22,7 +22,7 @@ alpha = [alpha1; alpha2; alpha3; alpha4];
 % xland = [6, -7, 6];
 % yland = [4, 8, -4];
 % lm = [xland', yland'];
-num_landmarks = 100;
+num_landmarks = 30;
 lm = 10-20*rand(num_landmarks,2);
 landmarks_seen = zeros(num_landmarks,1);
 
