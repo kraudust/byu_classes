@@ -1,4 +1,3 @@
-
 import numpy as np
 import tensorflow as tf
 import vgg16
@@ -48,7 +47,7 @@ style_acts = sess.run( ops, feed_dict={vgg.imgs: style_img} )
 
 # this clobbers all VGG variables, but we need it to initialize the
 # adam stuff, so we reload all of the weights...
-sess.run( tf.initialize_all_variables() )
+sess.run( tf.global_variables_initializer() )
 vgg.load_weights( 'vgg16_weights.npz', sess )
 
 # initialize with the content image
