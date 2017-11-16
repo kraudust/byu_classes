@@ -62,16 +62,16 @@ neg_test_filenames = os.listdir('/home/kraudust/git/personal_git/byu_classes/dee
 neg_test_labels  = os.listdir('/home/kraudust/git/personal_git/byu_classes/deep_learning/lab6_cancer_detector/cancer_data/outputs/test/neg')
 
 # number of training images to use
-n = 150
+n = 300
 # number of test images to use
-t = 50
+t = 60
 train_index = random.sample(range(len(pos_train_filenames)),n)
 test_index = random.sample(range(len(pos_test_filenames)), t)
 print len(test_index)
 # im_size = 512
 # im_size = 256
 # im_size = 128
-im_size = 64
+im_size = 128
 train_ims = np.zeros((n,im_size,im_size,3)).astype(np.float32)
 train_labs = np.zeros((n,im_size,im_size,1)).astype(np.float32)
 test_ims = np.zeros((t,im_size,im_size,3)).astype(np.float32)
@@ -124,7 +124,7 @@ train_ims = (train_ims - np.mean(train_ims,0))/(np.std(train_ims,0))
 test_ims = (test_ims - np.mean(test_ims,0))/(np.std(test_ims,0))
 print "Finished whitening data..."
 #--------------------------------------------Design Neural Net---------------------------------------------
-batch_size = 10
+batch_size = 20
 input_images = tf.placeholder(tf.float32,[batch_size,im_size,im_size,3],name='image')
 label_images = tf.placeholder(tf.int64,[batch_size, im_size, im_size],name = 'label')
 keep_prob = tf.placeholder(tf.float32, shape = [], name = 'keep_prob')

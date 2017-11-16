@@ -6,7 +6,8 @@ from skimage import io as skio
 from skimage import transform
 import random
 from pdb import set_trace as stop
-
+import copy
+import matplotlib.image as mpimg
 #------------------------------------------FUNCTIONS----------------------------------------------------------
 # Convolution Function
 def conv( x, filter_size=5, stride=2, num_filters=64, is_output=False, name="conv" ):
@@ -156,7 +157,7 @@ sess = tf.Session()
 saver = tf.train.Saver()
 load_prev_weights = True
 if load_prev_weights:
-    saver.restore(sess, "/home/kraudust/git/personal_git/byu_classes/deep_learning/lab7_wasserstein_GAN/train2/ckpt/GAN.ckpt")
+    saver.restore(sess, "/home/kraudust/git/personal_git/byu_classes/deep_learning/lab7_wasserstein_GAN/train3/ckpt/GAN.ckpt")
 else:
     init = tf.global_variables_initializer()
     sess.run(init)
@@ -181,37 +182,44 @@ merged = tf.summary.merge_all()
 #     print i*n_critic*batch_size, ' images trained on'
 #     print i, '\n'
 
-# Generate smooth interpolation image
-zin1 = np.random.uniform(size=(100))
-zin2 = np.random.uniform(size=(100))
-num_steps = 10
-z_array = np.array([slerp(zin1,zin2,t) for t in np.arange(0.0,1.0,1.0/num_steps)])
-im_array = sess.run(x_tild, feed_dict = {z:z_array})
-clip_neg = im_array < 0
-im_array[clip_neg] = 0.0
-fig = plt.figure()
-for i in xrange(num_steps):
-    fig.add_subplot(1,num_steps,i+1)
-    plt.imshow(im_array[i,:,:,:])
-    plt.axis('off')
-    print i
+# # Generate smooth interpolation image
+# zin1 = np.random.uniform(size=(100))
+# zin2 = np.random.uniform(size=(100))
+# num_steps = 10
+# z_array = np.array([slerp(zin1,zin2,t) for t in np.arange(0.0,1.0,1.0/num_steps)])
+# im_array = sess.run(x_tild, feed_dict = {z:z_array})
+# clip_neg = im_array < 0
+# im_array[clip_neg] = 0.0
+# fig = plt.figure()
+# for i in xrange(num_steps):
+#     fig.add_subplot(1,num_steps,i+1)
+#     plt.imshow(im_array[i,:,:,:])
+#     plt.axis('off')
+#     # print i
+# # plt.show()
+
+# # Generate a bunch of faces
+# batch_size = 64
+# side = int(np.sqrt(batch_size))
+# z_ = np.random.uniform(size=(batch_size,100))
+# im_array = sess.run(x_tild, feed_dict = {z:z_})
+# clip_neg = im_array < 0
+# im_array[clip_neg] = 0.0
+# fig2 = plt.figure()
+# for i in xrange(batch_size):
+#     fig2.add_subplot(side, side, i+1)
+#     plt.imshow(im_array[i,:,:,:])
+#     plt.axis('off')
+#     # print i
 # plt.show()
-
-# Generate a bunch of faces
-batch_size = 64
-side = int(np.sqrt(batch_size))
-z_ = np.random.uniform(size=(batch_size,100))
-im_array = sess.run(x_tild, feed_dict = {z:z_})
-clip_neg = im_array < 0
-im_array[clip_neg] = 0.0
-fig2 = plt.figure()
-for i in xrange(batch_size):
-    fig2.add_subplot(side, side, i+1)
-    plt.imshow(im_array[i,:,:,:])
-    plt.axis('off')
-    print i
+image1 = mpimg.imread('interp_turn_in.png')
+image2 = mpimg.imread('grid_turn_in.png')
+plt.figure(figsize = (5,10))
+plt.imshow(image1)
+plt.axis('off')
+plt.figure(figsize = (20,10))
+plt.imshow(image2)
+plt.axis('off')
 plt.show()
-    
-
 writer.close()
 
