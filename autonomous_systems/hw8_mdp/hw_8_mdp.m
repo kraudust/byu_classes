@@ -61,6 +61,8 @@ for i = 1:Np
 end
 
 
+
+% Make Plots --------------------------------------------------------------
 % Plot map
 % Sort through the cells to determine the x-y locations of occupied cells
 [Mm,Nm] = size(map);
