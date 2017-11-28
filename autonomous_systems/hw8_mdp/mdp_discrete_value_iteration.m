@@ -1,6 +1,7 @@
 function [Vhat, policy] = mdp_discrete_value_iteration(map)
-    global iter
     Vhat = map;
+    global iter
+
     N = size(map,1);
     policy = zeros(N,N);
     conv = 5;
@@ -16,8 +17,6 @@ function [Vhat, policy] = mdp_discrete_value_iteration(map)
         conv = norm(Vhat-map)
         map = Vhat;
         iters = iters + 1
-        %display(iters)
-        %display(converged)
     end
 
 end
