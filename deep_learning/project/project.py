@@ -96,12 +96,12 @@ with tf.name_scope('optimizer'):
 # --------------------------------------------RUN NEURAL NET--------------------------------------------------
 sess = tf.Session()
 saver = tf.train.Saver()
-load_weights = False
+load_weights = True
 if load_weights == False:
     init = tf.global_variables_initializer()
     sess.run(init)
 else:
-    checkpoint_path = 'tmp/epoch_400.ckpt'
+    checkpoint_path = 'tmp/pass_1/epoch_19990.ckpt'
     saver.restore(sess, checkpoint_path)
 
 
