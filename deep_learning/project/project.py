@@ -36,7 +36,7 @@ def fc(x, out_size=50, is_output=False, name="fc"):
 # -------------------------------------------LOAD DATA--------------------------------------------------------
 # puzzles = np.zeros((1000000, 81), np.int32)
 # solutions = np.zeros((1000000, 81), np.int32)
-data_size = 1000000  # number of sudoku puzzles to load into RAM
+data_size = 100  # number of sudoku puzzles to load into RAM
 puzzles = np.zeros((data_size, 81), np.int32)
 solutions = np.zeros((data_size, 81), np.int32)
 for i, line in enumerate(open('sudoku.csv', 'r').read().splitlines()[1:]):
@@ -63,6 +63,16 @@ h1 = conv(h0, name='conv2')
 h2 = conv(h1, name='conv3')
 h3 = conv(h2, name='conv4')
 h4 = conv(h3, name='conv5')
+# h5 = conv(h4, name='conv6')
+# h6 = conv(h5, name='conv7')
+# h7 = conv(h6, name='conv8')
+# h8 = conv(h7, name='conv9')
+# h9 = conv(h8, name='conv10')
+# h10 = conv(h9, name='conv11')
+# h11 = conv(h10, name='conv12')
+# h12 = conv(h11, name='conv13')
+# h13 = conv(h12, name='conv14')
+# h14 = conv(h13, name='conv15')
 score = conv(h4, num_filters=9, is_output=True, name='score')
 
 # istarget = tf.to_float(tf.equal(puzzle, tf.zeros_like(puzzle))) # 0: blanks
@@ -96,20 +106,45 @@ with tf.name_scope('optimizer'):
 # --------------------------------------------RUN NEURAL NET--------------------------------------------------
 sess = tf.Session()
 saver = tf.train.Saver()
-load_weights = True
+load_weights = False
 if load_weights == False:
     init = tf.global_variables_initializer()
     sess.run(init)
 else:
-    checkpoint_path = 'tmp/pass_1/epoch_19990.ckpt'
+    checkpoint_path = 'tmp/pass_2/epoch_19990.ckpt'
     saver.restore(sess, checkpoint_path)
+i = 1
 
+puzzle_easy = np.array([[0,0,3,0,0,5,2,0,4],
+              [4,9,0,0,0,0,6,8,7],
+              [0,0,0,0,0,0,9,0,5],
+              [0,4,2,0,9,6,0,0,0],
+              [0,0,9,3,0,8,4,0,0],
+              [0,0,0,7,1,0,8,2,0],
+              [3,0,8,0,0,0,0,0,0],
+              [9,1,7,0,0,0,0,4,8],
+              [2,0,4,8,0,0,5,0,0]]).astype(np.int32)
+puzzle_easy_soln = np.array([[7,8,3,9,6,5,2,1,4],
+              [4,9,5,2,3,1,6,8,7],
+              [6,2,1,4,8,7,9,3,5],
+              [8,4,2,5,9,6,1,7,3],
+              [1,7,9,3,2,8,4,5,6],
+              [5,3,6,7,1,4,8,2,9],
+              [3,5,8,1,4,9,7,6,2],
+              [9,1,7,6,5,2,3,4,8],
+              [2,6,4,8,7,3,5,9,1]]).astype(np.int32)
+# acc_print = sess.run(accuracy, feed_dict={puzzle: np.reshape(puzzle_easy,
+#                                                     [batch_size, 9, 9, 1]).astype(np.float32) - 1,
+#                                                     solution: np.reshape(puzzle_easy_soln,
+#                                                     [batch_size, 9, 9]).astype(np.int32) - 1})
 
-#uncomment the line below to start from previous weights
-# saver.restore(sess, "dropout_data/epoch_600.ckpt")
-#uncomment the 2 lines below to start from scratch
-# init = tf.global_variables_initializer()
-# sess.run(init)
+# acc_print_easy = sess.run(accuracy, feed_dict={puzzle: np.reshape(puzzles[batch_size*i:batch_size*(i+1), :, :],
+#                                                     [batch_size, 9, 9, 1]).astype(np.float32) - 1,
+#                                                     solution: np.reshape(solutions[batch_size*i:batch_size*(i+1), :, :],
+#                                                     [batch_size, 9, 9]).astype(np.int32) - 1})
+# print acc_print_easy
+
+# pause()
 
 # Summaries
 writer = tf.summary.FileWriter("./tf_logs", sess.graph)
