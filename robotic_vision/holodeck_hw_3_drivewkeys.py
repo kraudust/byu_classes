@@ -28,7 +28,7 @@ def fly_uav():
     # y - out the right wing
     # z - out the top
     command = np.array([0.0, 0.0, 0.0, 0.0])
-    for i in range(500):
+    for i in range(5000):
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
