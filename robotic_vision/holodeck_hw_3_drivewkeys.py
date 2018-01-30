@@ -6,6 +6,7 @@ import pygame
 import cv2
 import scipy.io as sio
 from copy import deepcopy
+from  plot_holodeck_states import plot_states as plt_states
 
 def setup_pygame():
     pygame.init()
@@ -15,7 +16,8 @@ def setup_pygame():
     # pygame.mouse.set_visible(0)
 
 def fly_uav():
-    env = Holodeck.make("UrbanCity")
+    # env = Holodeck.make("UrbanCity")
+    env = Holodeck.make("UrbanCity", Holodeck.GL_VERSION.OPENGL3)
     setup_pygame()
     state_dict = {'velocity':[],'orientation':[],'position':[],'imu':[]}
     # for i in range(10):
@@ -25,8 +27,8 @@ def fly_uav():
     # x - out the back
     # y - out the right wing
     # z - out the top
-    command = np.array([0.0, 0.0, 0.0, 20.0])
-    for i in range(2000):
+    command = np.array([0.0, 0.0, 0.0, 0.0])
+    for i in range(500):
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
@@ -65,6 +67,8 @@ def fly_uav():
         canny_gray = cv2.Canny(gray,100,200)
         # canny_blur = cv2.Canny(blur,100,200)
         cv2.imshow('Canny Edge Detection',canny_gray)
+        cv2.imshow('Grayscale',gray)
+
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break
 
@@ -81,4 +85,5 @@ def fly_uav():
 
 if __name__ == "__main__":
     fly_uav()
+    plt_states()
     print("Finished")
