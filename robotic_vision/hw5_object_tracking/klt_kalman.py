@@ -5,7 +5,8 @@ from copy import deepcopy
  
 # Create a VideoCapture object and read from input file
 # If the input is the camera, pass 0 instead of the video file name
-cap = cv2.VideoCapture(0)
+video_location = '/home/kraudust/git/personal_git/byu_classes/robotic_vision/hw5_object_tracking/mv2_001.avi'
+cap = cv2.VideoCapture(video_location)
  
 # Check if camera opened successfully
 if (cap.isOpened()== False): 
@@ -26,7 +27,7 @@ Ts = 1.0/30.0
 kalman = cv2.KalmanFilter(4,2)
 kalman.transitionMatrix = np.array([[1., 0., Ts, 0.],[0., 1., 0., Ts], [0., 0., 1., 0.], [0., 0., 0., 1.]])
 kalman.measurementMatrix = np.array([[1., 0., 0., 0.], [0., 1., 0., 0.]])
-kalman.processNoiseCov = 1e2 * np.array
+# kalman.processNoiseCov = 1e2 * np.array
 
 first_time_through = True
 while(cap.isOpened()):
@@ -35,7 +36,7 @@ while(cap.isOpened()):
         gray_frame_old = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         showCrosshair = False
         fromCenter = False
-        roi = cv2.selectROI("Image", frame, fromCenter, showCrosshair) #returns [top left corner x, top left corner y, width, height]
+        roi = cv2.selectROI("Image", frame, showCrosshair, fromCenter) #returns [top left corner x, top left corner y, width, height]
         roi_frame_gray = gray_frame_old[roi[0]:roi[0] + roi[2], roi[1]:roi[1] + roi[3]]
         p0 = cv2.goodFeaturesToTrack(roi_frame_gray, mask = None, **feature_params)
         p0[:,0,0] = p0[:,0,0] + roi[0]
