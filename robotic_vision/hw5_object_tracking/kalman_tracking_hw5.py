@@ -24,7 +24,6 @@ class klt_kalman():
                                 maxLevel = 2,
                                 criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
 
-        # Other variables I use
         self.p1 = None # p0 passed through optical flow
 
         ret, self.frame_old = self.cap.read()
@@ -32,32 +31,30 @@ class klt_kalman():
         self.frame_old = cv2.cvtColor(self.frame_old, cv2.COLOR_BGR2GRAY)
 
         # self.roi = self.frame_old[self.cx:int(self.cx + self.w/2), self.cy:int(self.cy + self.h/2.)]
-        self.roi = self.frame_old[self.cy:int(self.cy + self.h/2), self.cx:int(self.cx + self.w/2.)]
+        self.roi = self.frame_old[int(self.cy):int(self.cy + self.h/2), int(self.cx):int(self.cx + self.w/2.)]
         self.p0 = cv2.goodFeaturesToTrack(self.roi, mask = None, **self.feature_params)
         self.p0[:,0,0] = self.p0[:,0,0] + self.cx
         self.p0[:,0,1] = self.p0[:,0,1] + self.cy
+        self.p0 = np.float32(self.p0)
 
         # initialize Kalman Filter
-        self.Ts = 1.0/30.0 # timestep
+        self.Ts = 1./30. # timestep
         self.kalman = cv2.KalmanFilter(4,2) # kalman filter object
         self.kalman.transitionMatrix = np.array([   [1., 0., self.Ts, 0.],
                                                     [0., 1., 0., self.Ts], 
                                                     [0., 0., 1., 0.], 
-                                                    [0., 0., 0., 1.]]) # state transition matrix (discrete)
-        self.kalman.measurementMatrix = np.array([[1., 0., 0., 0.], [0., 1., 0., 0.]])
-        self.kalman.processNoiseCov = 1e50 * np.array([[self.Ts**3/3., 0., self.Ts**2/2., 0.],
+                                                    [0., 0., 0., 1.]], np.float32) # state transition matrix (discrete)
+        self.kalman.measurementMatrix = np.array([[1., 0., 0., 0.], [0., 1., 0., 0.]], np.float32)
+        self.kalman.processNoiseCov = 1e+2 * np.array([[self.Ts**3/3., 0., self.Ts**2/2., 0.],
                                                       [0., self.Ts**3/3., 0., self.Ts**2/2.],
                                                       [self.Ts**2/2., 0., self.Ts, 0.],
-                                                      [0., self.Ts**2/2., 0., self.Ts]])
-        self.kalman.measurementNoiseCov = 1e-50 * np.eye(2)
+                                                      [0., self.Ts**2/2., 0., self.Ts]], np.float32)
+        self.kalman.measurementNoiseCov = 1e-5 * np.eye(2, dtype=np.float32)
         self.kalman.statePost = np.array([[self.p0[0][0][0]],
                                           [self.p0[0][0][1]],
                                           [0.],
-                                          [0.]])
-        self.kalman.errorCovPost = 0.1 * np.eye(4)
-        self.meas = np.array([[0.],[0.]])
-        self.meas[0,0] = self.p0[0,0,0]
-        self.meas[1,0] = self.p0[0,0,1]
+                                          [0.]], dtype=np.float32)
+        self.kalman.errorCovPost = 0.1 * np.eye(4, dtype=np.float32)
 
     def calc_optical_flow(self):
         while(self.cap.isOpened()):
@@ -66,30 +63,18 @@ class klt_kalman():
             self.frame_new = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             # Calculate optical flow
-            print(self.p0)
             self.p1, st, err = cv2.calcOpticalFlowPyrLK(self.frame_old, self.frame_new, self.p0, None, **self.lk_params)
 
-            # Select good points
-            good_new = self.p1[st==1]
-            good_old = self.p0[st==1]
-
             # Update with Kalman Filter
-            state = self.kalman.predict()
-            self.meas[0,0] = good_new[0,0]
-            self.meas[1,0] = good_new[0,1]
-            state = self.kalman.correct(self.meas)
-
-            # Now update the previous frame and previous points
-            self.frame_old = deepcopy(self.frame_new)
-            self.p0 = good_new.reshape(-1,1,2)
-            # self.p0 = state[0:2].T.reshape(-1,1,2)
-            # self.p0[0,0,0] = int(self.p0[0,0,0])
-            # self.p0[0,0,1] = int(self.p0[0,0,1])
-            # self.p0 = np.float32(self.p0)
+            p_predict = self.kalman.predict()
+            # self.meas[0,0] = good_new[0,0]
+            # self.meas[1,0] = good_new[0,1]
+            p_correct = self.kalman.correct(np.array([[self.p1[0,0,0]], [self.p1[0,0,1]]], np.float32))
 
             if ret == True:
-                new_im = cv2.rectangle(frame,(good_new[:,0] - self.w/2.0, good_new[:,1] - self.h/2.0),(good_new[:,0] + self.w/2.0, good_new[:,1] + self.h/2.0), (0, 0, 255), 2)
-                # new_im = cv2.rectangle(frame,(state[0,:] - self.w/2.0, state[1,:] - self.h/2.0),(good_new[:,0] + self.w/2.0, good_new[:,1] + self.h/2.0), (0, 0, 255), 2)
+                pt1 = (int(p_correct[0]-self.w/2), int(p_correct[1]-self.h/2))
+                pt2 = (int(p_correct[0]+self.w/2), int(p_correct[1]+self.h/2))
+                new_im = cv2.rectangle(frame, pt1, pt2, (0,0,255), thickness=2)
                 cv2.imshow('Original',new_im)
 
                 # Press Q on keyboard to  exit
@@ -99,6 +84,9 @@ class klt_kalman():
             # Break the loop
             else: 
                 break
+            self.frame_old = deepcopy(self.frame_new)
+            self.p0 = np.reshape(p_correct[0:2,:],(-1,1,2))
+
 
 class mean_cam_kalman():
     def __init__(self,video_path):
@@ -172,7 +160,7 @@ class mean_cam_kalman():
 if __name__ == "__main__":
 
     video_location = '/home/kraudust/git/personal_git/byu_classes/robotic_vision/hw5_object_tracking/mv2_001.avi'
-    # video_location = 1
+    # video_location = 0
 
     # KLT Kalman Filter
     kt = klt_kalman(video_location)
