@@ -106,7 +106,7 @@ class mean_cam_kalman():
 
         # Get window to track
         self.track_window = cv2.selectROI("Image", frame, False, False)
-        # self.track_window = (257, 96, 18, 11)
+        self.track_window = (257, 96, 18, 11)
         # print(self.track_window)
         cx, cy, w, h = self.track_window
         # cx = self.track_window[0]
@@ -187,9 +187,13 @@ class back_sub_kalman():
         ret,self.frame_old = self.cap.read()
         self.blur = 5
         self.frame_old = cv2.cvtColor(self.frame_old, cv2.COLOR_BGR2GRAY)
-        # self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
-        self.kernel = np.ones((2,2), np.uint8)
-        # self.frame_old = cv2.GaussianBlur(self.frame_prev, (self.blur, self.blur), 0)
+        self.kernel_d = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(13,13))
+        # initialize kernel for erroding function
+        self.kernel_e = np.ones((15,15),np.uint8)
+        # self.kernel_d = np.ones((20,20),np.uint8)
+        # self.kernel = np.ones((2,2), np.uint8)
+        self.frame_old = cv2.GaussianBlur(self.frame_old, (self.blur, self.blur), 0)
+        self.area = 10
 
         # # initialize Kalman Filter
         # self.Ts = 1./30. # timestep
@@ -209,7 +213,30 @@ class back_sub_kalman():
         #                                   [0.],
         #                                   [0.]], dtype=np.float32)
         # self.kalman.errorCovPost = 0.1 * np.eye(4, dtype=np.float32)
+
     def run_tracking(self):
+        # Setup SimpleBlobDetector parameters.
+        params = cv2.SimpleBlobDetector_Params()
+         
+        # Filter by Area.
+        params.filterByArea = True
+        params.minArea = 100
+         
+        # Filter by Circularity
+        params.filterByCircularity = True
+        params.minCircularity = 0.
+         
+        # Filter by Convexity
+        params.filterByConvexity = True
+        params.minConvexity = 0.0
+         
+        # Filter by Inertia
+        params.filterByInertia = False
+        params.minInertiaRatio = 0.00
+
+        # Set up the detector with default parameters.
+        detector = cv2.SimpleBlobDetector_create(params)
+
         while(self.cap.isOpened()):
             ret, frame = self.cap.read()
             if ret == True:
@@ -217,9 +244,13 @@ class back_sub_kalman():
                 diff = cv2.absdiff(self.frame_new, self.frame_old)
                 thresh_diff = cv2.threshold(diff, 10, 255, cv2.THRESH_BINARY)[1]
                 new_im = cv2.erode(thresh_diff, None, iterations = 1)
-                new_im = cv2.dilate(new_im, self.kernel, iterations = 3)
+                new_im = cv2.dilate(new_im, self.kernel_d, iterations = 3)
+
+                # Detect blobs
+                keypoints = detector.detect(cv2.bitwise_not(new_im))
+                im_with_keypoints = cv2.drawKeypoints(frame, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
                 cv2.imshow('diff', new_im)
-                cv2.imshow('orig', frame)
+                cv2.imshow('orig', im_with_keypoints)
 
                 # Press Q on keyboard to  exit
                 if cv2.waitKey(25) & 0xFF == ord('q'):
@@ -235,10 +266,15 @@ if __name__ == "__main__":
     video_location = '/home/kraudust/git/personal_git/byu_classes/robotic_vision/hw5_object_tracking/mv2_001.avi'
     # video_location = 0
 
-    # KLT Kalman Filter
+    # KLT Kalman Tracker
     # kt = klt_kalman(video_location)
-    # kt = mean_cam_kalman(video_location, 'cam')
+
+    # Mean or Cam Shift Kalman Tracker
+    # kt = mean_cam_kalman(video_location, 'mean')
+
+    # Background Subtraction Kalman Tracker
     kt = back_sub_kalman(video_location)
+
     kt.run_tracking()
     kt.cap.release()
     cv2.destroyAllWindows()
