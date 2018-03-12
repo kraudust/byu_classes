@@ -43,17 +43,27 @@ class visual_odom():
         self.gray_cur = None # current grascale image for optical flow
 
         # Grab first set of features to track
-        self.feature_params = dict( maxCorners = 100,
-                                    qualityLevel = 0.3,
-                                    minDistance = 7,
-                                    blockSize = 7 )
-        self.p0 = cv2.goodFeaturesToTrack(self.gray_old, mask = None, **self.feature_params)
+        # self.feature_params = dict( maxCorners = 100,
+        #                             qualityLevel = 0.3,
+        #                             minDistance = 7,
+        #                             blockSize = 7 )
+        # self.feature_params = dict( maxCorners = 500,
+        #                        qualityLevel = 0.3,
+        #                        minDistance = 7,
+        #                        blockSize = 7 )
+        # self.p0 = cv2.goodFeaturesToTrack(self.gray_old, mask = None, **self.feature_params)
+        self.detector = cv2.FastFeatureDetector_create(threshold = 25, nonmaxSuppression = True)
+        self.p0 = self.detector.detect(self.gray_old)
+        self.p0 = np.array([x.pt for x in self.p0],dtype=np.float32)
         self.p1 = None
 
         # params for lucas kanade optical flow
-        self.lk_params = dict( winSize  = (15,15),
-                      maxLevel = 2,
-                      criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+        # self.lk_params = dict( winSize  = (15,15),
+        #               maxLevel = 2,
+        #               criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+        self.lk_params = dict(winSize = (21,21),
+                            # maxLevel = 3
+                         criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
 
     def setup_pygame(self):
         pygame.init()
@@ -67,6 +77,7 @@ class visual_odom():
         self.velocity[0] = -self.velocity[0] # for some reason the position and velocities are in a left handed coordinate frame, this fixes it to line up with the orientation axes
 
         self.orientation = deepcopy(self.state[Sensors.ORIENTATION_SENSOR]) # orientation (a rotation matrix)
+        self.orientation_est = deepcopy(self.orientation) # orientation (a rotation matrix)
 
         # Body Frame Velocities
         self.body_vel = np.matmul(self.orientation, np.divide(self.velocity, 100.0))
@@ -91,32 +102,67 @@ class visual_odom():
         self.p1, st, err = cv2.calcOpticalFlowPyrLK(self.gray_old, self.gray_cur, self.p0, None, **self.lk_params)
 
         # Select points where optical flow exists (i.e. inverse existed)
-        self.good_new = self.p1[st==1]
-        self.good_old = self.p0[st==1]
+        # self.good_new = self.p1[st==1]
+        # self.good_old = self.p0[st==1]
 
         # draw the tracks for visualization
-        mask = np.zeros_like(self.image)
-        for j,(new,old) in enumerate(zip(self.good_new,self.good_old)):
-            a,b = new.ravel()
-            c,d = old.ravel()
-            mask = cv2.line(mask, (a,b),(c,d), [0,0,255], 1)
-            image = cv2.circle(self.image,(a,b),2,[0,0,255],-1)
-        img = cv2.add(image,mask)
+        # mask = np.zeros_like(self.image)
+        # for j,(new,old) in enumerate(zip(self.good_new,self.good_old)):
+        #     a,b = new.ravel()
+        #     c,d = old.ravel()
+        #     mask = cv2.line(mask, (a,b),(c,d), [0,0,255], 1)
+        #     image = cv2.circle(self.image,(a,b),2,[0,0,255],-1)
+        # img = cv2.add(image,mask)
 
         # cv2.imshow('Optic Flow', img)
         self.gray_old = deepcopy(self.gray_cur)
 
         # Calculate new features to track in current image
-        self.p0 = cv2.goodFeaturesToTrack(self.gray_old, mask = None, **self.feature_params)
+        # self.p0 = cv2.goodFeaturesToTrack(self.gray_old, mask = None, **self.feature_params)
 
     def compute_visual_odom(self):
+        #------------------------------------------------------------------------------------------------
+
+        # cam = PinholeCamera(512.0, 512.0, 512.0, 512.0, 256.5, 256.5)
+        # vo = VisualOdometry(cam)
+        #     def __init__(self,width,height,fx,fy,cx,cy,k1=0.0, k2 =0.0, p1=0.0,p2=0.0,k3=0.0):
+        #     def __init__(self,cam):
+        #         self.frame_stage = 0
+        #         self.cam = cam
+        #         self.new_frame = None
+        #         self.last_frame = None
+        #         self.intermediate_frame = None
+        #         self.cur_R = None
+        #         self.cur_t = None
+        #         self.px_ref = None
+        #         self.px_cur = None
+        #         self.focal = cam.fx
+        #         self.pp = (cam.cx,cam.cy)
+
+        # E,mask = cv2.findEssentialMat(self.px_cur,self.px_ref_old, focal = self.focal, pp=self.pp,method=cv2.RANSAC,prob=0.999,threshold=.3)
+        # _,_,t,mask = cv2.recoverPose(E,self.px_cur,self.px_ref_old,focal=self.focal,pp = self.pp)
+        # eulers = transforms3d.euler.mat2euler(R,'rxyz')
+        # print (eulers[0])
+        # absolute_scale = self.getAbsoluteScale(total_vel,positions)
+        # if(absolute_scale > 0):
+        #     self.cur_t = self.cur_t + absolute_scale*self.cur_R.dot(t)
+        #     self.cur_R = R.dot(self.cur_R)
+        #------------------------------------------------------------------------------------------------
+
         # E, mask = cv2.findEssentialMat(self.good_new, self.good_old, focal=1.0, method=cv2.RANSAC, prob=0.999, threshold=1.0)
-        E, mask = cv2.findEssentialMat(self.good_new, self.good_old, focal=1.0, method=cv2.RANSAC, prob=0.999, threshold=0.1)
-        R1, R2, t = cv2.decomposeEssentialMat(E)
+        E, mask = cv2.findEssentialMat(self.p1, self.p0, method=cv2.RANSAC, prob=0.999, threshold=0.3)
+        R1, R2, _ = cv2.decomposeEssentialMat(E)
         if np.trace(R1) > 2.5:
             R = deepcopy(R1)
-        else:
+        elif np.trace(R2) > 2.5:
             R = deepcopy(R2)
+        else:
+            R = np.array([[1,0,0],[0,1,0],[0,0,1]])
+        _, _, t, mask = cv2.recoverPose(E, self.p1, self.p0)
+        # t[0] = t[0]
+
+        self.p0 = self.detector.detect(self.gray_old)
+        self.p0 = np.array([x.pt for x in self.p0],dtype=np.float32)
 
         #checks that x2*E*x1 = 0 and x2*that*R*x1 = 0
         # that = np.array([[0, -t[2], t[1]], [t[2], 0, -t[0]], [-t[1], t[0], 0]])
@@ -131,7 +177,11 @@ class visual_odom():
         # diff[0] = -diff[0]
 
 
-        self.position_est = self.position_est + np.matmul(self.orientation, np.matmul(self.R_cam_quad,t*np.linalg.norm(self.velocity)/10.))
+        # self.position_est = self.position_est + np.matmul(self.orientation, np.matmul(self.R_cam_quad,t*np.linalg.norm(self.velocity)/10.))
+        self.position_est = self.position_est + np.matmul(self.orientation_est, np.matmul(self.R_cam_quad,t*np.linalg.norm(self.velocity)/10.))
+        # self.position_est = self.position_est + np.matmul(self.orientation, np.matmul(self.R_cam_quad,t*np.linalg.norm(self.velocity)/10.))
+        # self.position_est = self.position_est + np.matmul(self.orientation,t*np.linalg.norm(self.velocity)/10.)
+        self.orientation_est = np.matmul(R, self.orientation_est)
         # self.position_est = self.position_est + diff 
 
         # print(R)
@@ -147,35 +197,40 @@ class visual_odom():
             self.ekfplotwin.setInteractive(True)
             self.plots = self.ekfplotwin.addPlot(1,1)
             self.plots2 = self.ekfplotwin.addPlot(2,1)
-            self.plots3 = self.ekfplotwin.addPlot(3,1)
-            self.xcurves = self.plots.plot(pen=(0,0,255))
+            # self.plots3 = self.ekfplotwin.addPlot(3,1)
+            self.plots.setLabel('left', text='X')
+            # self.plots.setLabel('bottom', text='Y')
+            self.plots2.setLabel('left', text='Y')
+            # self.plots3.setLabel('left', text='Z')
+            self.plots2.setLabel('bottom', text='Time Step')
+            self.xcurves = self.plots.plot(pen=(255,0,0))
             self.xcurves_est = self.plots.plot(pen=(0,255,0))
-            self.ycurves = self.plots2.plot(pen=(0,0,255))
+            self.ycurves = self.plots2.plot(pen=(255,0,0))
             self.ycurves_est = self.plots2.plot(pen=(0,255,0))
-            self.zcurves = self.plots3.plot(pen=(0,0,255))
-            self.zcurves_est = self.plots3.plot(pen=(0,255,0))
+            # self.zcurves = self.plots3.plot(pen=(255,0,0))
+            # self.zcurves_est = self.plots3.plot(pen=(0,255,0))
             self.xdata = []
             self.xdata_est = []
             self.ydata = []
             self.ydata_est = []
-            self.zdata = []
-            self.zdata_est = []
+            # self.zdata = []
+            # self.zdata_est = []
             self.time = []
             self.init_plots = False
         else:
             self.xdata.append(self.position[0,0])
             self.ydata.append(self.position[1,0])
-            self.zdata.append(self.position[2,0])
+            # self.zdata.append(self.position[2,0])
             self.xdata_est.append(self.position_est[0,0])
             self.ydata_est.append(self.position_est[1,0])
-            self.zdata_est.append(self.position_est[2,0])
+            # self.zdata_est.append(0.5*self.position_est[2,0])
             self.time.append(self.i)
             self.xcurves.setData(self.time, self.xdata)
             self.xcurves_est.setData(self.time, self.xdata_est)
             self.ycurves.setData(self.time, self.ydata)
             self.ycurves_est.setData(self.time, self.ydata_est)
-            self.zcurves.setData(self.time, self.zdata)
-            self.zcurves_est.setData(self.time, self.zdata_est)
+            # self.zcurves.setData(self.time, self.zdata)
+            # self.zcurves_est.setData(self.time, self.zdata_est)
         self.app.processEvents()
         self.i += 1
 
