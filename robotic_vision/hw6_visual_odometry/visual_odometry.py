@@ -121,33 +121,6 @@ class visual_odom():
         # self.p0 = cv2.goodFeaturesToTrack(self.gray_old, mask = None, **self.feature_params)
 
     def compute_visual_odom(self):
-        #------------------------------------------------------------------------------------------------
-
-        # cam = PinholeCamera(512.0, 512.0, 512.0, 512.0, 256.5, 256.5)
-        # vo = VisualOdometry(cam)
-        #     def __init__(self,width,height,fx,fy,cx,cy,k1=0.0, k2 =0.0, p1=0.0,p2=0.0,k3=0.0):
-        #     def __init__(self,cam):
-        #         self.frame_stage = 0
-        #         self.cam = cam
-        #         self.new_frame = None
-        #         self.last_frame = None
-        #         self.intermediate_frame = None
-        #         self.cur_R = None
-        #         self.cur_t = None
-        #         self.px_ref = None
-        #         self.px_cur = None
-        #         self.focal = cam.fx
-        #         self.pp = (cam.cx,cam.cy)
-
-        # E,mask = cv2.findEssentialMat(self.px_cur,self.px_ref_old, focal = self.focal, pp=self.pp,method=cv2.RANSAC,prob=0.999,threshold=.3)
-        # _,_,t,mask = cv2.recoverPose(E,self.px_cur,self.px_ref_old,focal=self.focal,pp = self.pp)
-        # eulers = transforms3d.euler.mat2euler(R,'rxyz')
-        # print (eulers[0])
-        # absolute_scale = self.getAbsoluteScale(total_vel,positions)
-        # if(absolute_scale > 0):
-        #     self.cur_t = self.cur_t + absolute_scale*self.cur_R.dot(t)
-        #     self.cur_R = R.dot(self.cur_R)
-        #------------------------------------------------------------------------------------------------
 
         # E, mask = cv2.findEssentialMat(self.good_new, self.good_old, focal=1.0, method=cv2.RANSAC, prob=0.999, threshold=1.0)
         E, mask = cv2.findEssentialMat(self.p1, self.p0, method=cv2.RANSAC, prob=0.999, threshold=0.3)
