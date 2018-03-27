@@ -37,6 +37,8 @@ class visual_odom():
 
         # Grab first image for optical flow
         self.image = self.state[Sensors.PRIMARY_PLAYER_CAMERA] # camera
+        self.P1 = None # rotation and translation of first image relative to world frame for traingulation
+        self.P2 = None # rotation and translation of second image relative to world frame for traingulation
 
         # Convert to grayscale
         self.gray_old = cv2.cvtColor(self.image, cv2.COLOR_BGRA2GRAY)
@@ -46,6 +48,8 @@ class visual_odom():
         self.p0 = self.detector.detect(self.gray_old)
         self.p0 = np.array([x.pt for x in self.p0],dtype=np.float32)
         self.p1 = None
+        self.occupancy_grid =  np.ones((800,800))*255
+        cv2.imshow('Occupancy Grid', self.occupancy_grid)
 
         # params for lucas kanade optical flow
         # self.lk_params = dict( winSize  = (15,15),
@@ -75,6 +79,7 @@ class visual_odom():
         # Positions
         self.position = deepcopy(self.state[Sensors.LOCATION_SENSOR]) # position in world frame
         self.position[0] = -self.position[0] # for some reason the position and velocities are in a left handed coordinate frame, this fixes it to line up with the orientation axes
+        self.position = self.position/100.
         # imu = self.state[Sensors.IMU_SENSOR] # IMU
         self.image = deepcopy(self.state[Sensors.PRIMARY_PLAYER_CAMERA]) # camera
         self.gray_cur = cv2.cvtColor(self.image, cv2.COLOR_BGRA2GRAY)
@@ -86,6 +91,7 @@ class visual_odom():
         if self.get_first_states == True:
             self.position_est = deepcopy(self.position)
             self.get_first_states = False
+            self.P1 = np.concatenate((self.orientation,self.position), axis=1)
 
     def calc_optical_flow(self):
         # Calculate new points that grids have moved to
@@ -110,25 +116,28 @@ class visual_odom():
         self.gray_old = deepcopy(self.gray_cur)
 
         # Calculate new features to track in current image
-        # pause()
 
 
     def compute_R_and_t(self):
 
         # E, mask = cv2.findEssentialMat(self.good_new, self.good_old, focal=1.0, method=cv2.RANSAC, prob=0.999, threshold=1.0)
         # E, mask = cv2.findEssentialMat(self.p0, self.p1, method=cv2.RANSAC, prob=0.999, threshold=0.1)
-        E, mask = cv2.findEssentialMat(self.good_old, self.good_new, focal=256, pp=(256,256),method=cv2.RANSAC, prob=0.999, threshold=0.1)
-        # R1, R2, t = cv2.decomposeEssentialMat(E)
-        tmp, R1, t, tmp2 = cv2.recoverPose(E, self.good_old, self.good_new)
-        if np.trace(R1) > 2.5:
-            R = deepcopy(R1)
-        # elif np.trace(R2) > 2.5:
-        #     R = deepcopy(R2)
-        else:
-            R = np.array([[1,0,0],[0,1,0],[0,0,1]])
+        # E, mask = cv2.findEssentialMat(self.good_old, self.good_new, focal=256, pp=(256,256),method=cv2.RANSAC, prob=0.999, threshold=0.1)
+        # # R1, R2, t = cv2.decomposeEssentialMat(E)
+        # tmp, R1, t, tmp2 = cv2.recoverPose(E, self.good_old, self.good_new)
+        # if np.trace(R1) > 2.5:
+        #     R = deepcopy(R1)
+        # # elif np.trace(R2) > 2.5:
+        # #     R = deepcopy(R2)
+        # else:
+        #     R = np.array([[1,0,0],[0,1,0],[0,0,1]])
         # _, _, t, mask = cv2.recoverPose(E, self.p1, self.p0)
         # t[0] = t[0]
-
+        # print(np.around(self.orientation, 3))
+        # print(np.around(self.position, 3))
+        R = deepcopy(self.orientation)
+        t = deepcopy(self.position)
+        self.P2 = np.concatenate((R,t), axis=1)
 
         #checks that x2*E*x1 = 0 and x2*that*R*x1 = 0
         # that = np.array([[0, -t[2], t[1]], [t[2], 0, -t[0]], [-t[1], t[0], 0]])
@@ -152,9 +161,9 @@ class visual_odom():
 
         # print(R)
         # print(t)
-        print(np.matmul(self.R_cam_quad, t))
+        # print(np.matmul(self.R_cam_quad, t))
         # print(np.linalg.norm(t))
-        if len(self.good_new) < 300:
+        if len(self.good_new) < 800:
             self.p0 = self.detector.detect(self.gray_old)
             self.p0 = np.array([x.pt for x in self.p0],dtype=np.float32)
             # self.p0 = cv2.goodFeaturesToTrack(self.gray_old, mask = None, **self.feature_params)
@@ -184,6 +193,28 @@ class visual_odom():
 
         self.state, reward, terminal, _ = self.env.step(self.command)
 
+    def make_occupancy_grid(self):
+        X = cv2.triangulatePoints(self.P1, self.P2, self.good_old.T-256, self.good_new.T-256)
+        self.obstacles = X/X[3,0]
+        self.P1 = deepcopy(self.P2)
+        for i in range(np.shape(self.obstacles)[1]):
+            if abs(self.obstacles[0,i]) > 400 or abs(self.obstacles[1,i]) > 400:
+                pass
+            else:
+                if abs(self.obstacles[2,i]) > 17:
+                    # self.occupancy_grid[int(self.obstacles[1,i])+400, int(self.obstacles[0, i]) + 400] = self.occupancy_grid[int(self.obstacles[1,i])+400, int(self.obstacles[0,i]) + 400] - 100
+                    self.occupancy_grid[int(self.obstacles[1,i])+400, int(self.obstacles[0, i]) + 400] = 0
+                    # print(int(self.obstacles[1,i])+400, int(self.obstacles[0, i]) + 400)
+                    # if self.occupancy_grid[int(self.obstacles[1,i])+400, int(self.obstacles[0,i]) + 400] < 1:
+                        # self.occupancy_grid[int(self.obstacles[1,i])+400, int(self.obstacles[0,i]) + 400] = 1
+                # print(int(self.obstacles[0,i]), int(self.obstacles[1,i]), int(self.obstacles[2,i]))
+        # self.occupancy_grid = 0*self.occupancy_grid
+        cv2.imshow('Occupancy Grid', self.occupancy_grid)
+        if cv2.waitKey(25) & 0xFF == ord('q'):
+            pass
+
+        # print(np.around(self.obstacles, 1))
+
     def fly(self):
         self.setup_pygame()
 
@@ -195,8 +226,10 @@ class visual_odom():
                 if frame == 5: # do optical flow on every 3rd frame
                     self.calc_optical_flow() # calculate optical flow
                     self.compute_R_and_t()
+                    self.make_occupancy_grid()
                     frame = 0
-                    print('check')
+                    # print(self.position)
+                    # print('check')
                 # self.plot_states()
                 events = pygame.event.get() # get keyboard input
                 self.send_commands(events) # send new command from keyboard input
