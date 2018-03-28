@@ -203,7 +203,7 @@ class visual_odom():
             else:
                 if abs(self.obstacles[2,i]) > 17:
                     # self.occupancy_grid[int(self.obstacles[1,i])+400, int(self.obstacles[0, i]) + 400] = self.occupancy_grid[int(self.obstacles[1,i])+400, int(self.obstacles[0,i]) + 400] - 100
-                    self.occupancy_grid[int(self.obstacles[1,i])+400, int(self.obstacles[0, i]) + 400] = 0
+                    self.occupancy_grid[int(self.obstacles[1,i])+400+int(self.position[1]), int(self.obstacles[0, i]) + 400 + int(self.position[0])] = 0
                     # print(int(self.obstacles[1,i])+400, int(self.obstacles[0, i]) + 400)
                     # if self.occupancy_grid[int(self.obstacles[1,i])+400, int(self.obstacles[0,i]) + 400] < 1:
                         # self.occupancy_grid[int(self.obstacles[1,i])+400, int(self.obstacles[0,i]) + 400] = 1
